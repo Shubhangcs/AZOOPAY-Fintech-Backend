@@ -2,36 +2,11 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
-
-var (
-	PaysprintJWTKey    = []byte(os.Getenv("PAYSPRINT_JWT_KEY"))
-	PaysprintPartnerID = os.Getenv("PAYSPRINT_PARTNER_ID")
-)
-
-// Paysprint Token Generation
-
-func GeneratePaysprintToken(reqid string) (string, error) {
-	claims := jwt.MapClaims{
-		"partnerId": PaysprintPartnerID,
-		"reqid":     reqid,
-		"timestamp": time.Now().Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString(PaysprintJWTKey)
-	if err != nil {
-		return "", fmt.Errorf("GeneratePaysprintToken: %w", err)
-	}
-	return signed, nil
-}
-
-// Server Token Generation
 
 type TokenClaims struct {
 	UserID   string `json:"user_id"`

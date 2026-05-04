@@ -164,11 +164,11 @@ func (as *PostgresAdminStore) GetAdminDetailsForLogin(admin *models.AdminModel) 
 		admin_id,
 		admin_name
 	FROM admins
-	WHERE admin_id = $1
+	WHERE admin_phone = $1
 	AND admin_password = $2;
 	`
 
-	err := as.db.QueryRow(query, admin.AdminID, admin.AdminPassword).Scan(
+	err := as.db.QueryRow(query, admin.AdminPhone, admin.AdminPassword).Scan(
 		&admin.AdminID,
 		&admin.AdminName,
 	)

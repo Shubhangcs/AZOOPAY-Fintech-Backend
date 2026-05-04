@@ -8,33 +8,37 @@ import (
 )
 
 type DistributorModel struct {
-	DistributorID            string    `json:"distributor_id"`
-	MasterDistributorID      string    `json:"master_distributor_id"`
-	DistributorName          string    `json:"distributor_name"`
-	DistributorPhone         string    `json:"distributor_phone"`
-	DistributorEmail         string    `json:"distributor_email"`
-	DistributorPassword      string    `json:"distributor_password"`
-	DistributorAadharNumber  string    `json:"distributor_aadhar_number"`
-	DistributorPanNumber     string    `json:"distributor_pan_number"`
-	DistributorDateOfBirth   time.Time `json:"distributor_date_of_birth"`
-	DistributorGender        string    `json:"distributor_gender"`
-	DistributorCity          string    `json:"distributor_city"`
-	DistributorState         string    `json:"distributor_state"`
-	DistributorAddress       string    `json:"distributor_address"`
-	DistributorPincode       string    `json:"distributor_pincode"`
-	DistributorBusinessName  string    `json:"distributor_business_name"`
-	DistributorBusinessType  string    `json:"distributor_business_type"`
-	DistributorGSTNumber     *string   `json:"distributor_gst_number"`
-	DistributorMpin          int       `json:"distributor_mpin"`
-	DistributorKYCStatus     bool      `json:"distributor_kyc_status"`
-	DistributorWalletBalance float64   `json:"distributor_wallet_balance"`
-	HoldAmount               float64   `json:"hold_amount"`
-	DistributorAadharImage   *string   `json:"distributor_aadhar_image"`
-	DistributorPanImage      *string   `json:"distributor_pan_image"`
-	DistributorImage         *string   `json:"distributor_image"`
-	IsDistributorBlocked     bool      `json:"is_distributor_blocked"`
-	CreatedAT                time.Time `json:"created_at"`
-	UpdatedAT                time.Time `json:"updated_at"`
+	DistributorID                string    `json:"distributor_id"`
+	MasterDistributorID          string    `json:"master_distributor_id"`
+	DistributorName              string    `json:"distributor_name"`
+	DistributorPhone             string    `json:"distributor_phone"`
+	DistributorEmail             string    `json:"distributor_email"`
+	DistributorPassword          string    `json:"distributor_password"`
+	DistributorAadharNumber      string    `json:"distributor_aadhar_number"`
+	DistributorPanNumber         string    `json:"distributor_pan_number"`
+	DistributorDateOfBirth       time.Time `json:"distributor_date_of_birth"`
+	DistributorGender            string    `json:"distributor_gender"`
+	DistributorCity              string    `json:"distributor_city"`
+	DistributorState             string    `json:"distributor_state"`
+	DistributorAddress           string    `json:"distributor_address"`
+	DistributorPincode           string    `json:"distributor_pincode"`
+	DistributorBusinessName      string    `json:"distributor_business_name"`
+	DistributorBusinessType      string    `json:"distributor_business_type"`
+	DistributorGSTNumber         *string   `json:"distributor_gst_number"`
+	DistributorMpin              int       `json:"distributor_mpin"`
+	DistributorKYCStatus         bool      `json:"distributor_kyc_status"`
+	DistributorWalletBalance     float64   `json:"distributor_wallet_balance"`
+	HoldAmount                   float64   `json:"hold_amount"`
+	DistributorAadharFrontImage  *string   `json:"distributor_aadhar_front_image"`
+	DistributorAadharBackImage   *string   `json:"distributor_aadhar_back_image"`
+	DistributorPanImage          *string   `json:"distributor_pan_image"`
+	DistributorPanWithAgentImage *string   `json:"distributor_pan_with_agent_image"`
+	DistributorSignatureImage    *string   `json:"distributor_signature_image"`
+	DistributorSelfieImage       *string   `json:"distributor_selfie_image"`
+	DistributorShopImage         *string   `json:"distributor_shop_image"`
+	IsDistributorBlocked         bool      `json:"is_distributor_blocked"`
+	CreatedAT                    time.Time `json:"created_at"`
+	UpdatedAT                    time.Time `json:"updated_at"`
 }
 
 func (d *DistributorModel) ValidateCreateDistributor() error {

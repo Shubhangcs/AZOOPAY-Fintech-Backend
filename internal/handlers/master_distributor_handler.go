@@ -264,8 +264,8 @@ func (mh *MasterDistributorHandler) HandleMasterDistributorLogin(w http.Response
 		return
 	}
 
-	if req.MasterDistributorID == "" || req.MasterDistributorPassword == "" {
-		utils.BadRequest(w, mh.logger, "master distributor login", errors.New("id and password are required"))
+	if req.MasterDistributorPhone == "" || req.MasterDistributorPassword == "" {
+		utils.BadRequest(w, mh.logger, "master distributor login", errors.New("phone and password are required"))
 		return
 	}
 
@@ -371,29 +371,51 @@ func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorHoldAmount(w ht
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor hold amount updated successfully"})
 }
 
-// Update Master Distributor Aadhar Image
-func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorAadharImage(w http.ResponseWriter, r *http.Request) {
+// Update Master Distributor Aadhar Front Image Handler
+func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorAadharFrontImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.BadRequest(w, mh.logger, "update master distributor aadhar image", err)
+		utils.BadRequest(w, mh.logger, "update master distributor aadhar front image", err)
 		return
 	}
-	path := fmt.Sprintf("documents/%s/%s_aadhar_%d.png", id, id, time.Now().Unix())
+	path := fmt.Sprintf("documents/%s/%s_aadhar_front_%d.png", id, id, time.Now().Unix())
 	url, err := mh.awss3.GenerateUploadPresignedURL(path)
 	if err != nil {
-		utils.ServerError(w, mh.logger, "update master distributor aadhar image", err)
+		utils.ServerError(w, mh.logger, "update master distributor aadhar front image", err)
 		return
 	}
-	err = mh.mdStore.UpdateMasterDistributorAadharImage(path, id)
+	err = mh.mdStore.UpdateMasterDistributorAadharFrontImage(path, id)
 	if err != nil {
-		utils.ServerError(w, mh.logger, "update master distributor aadhar image", err)
+		utils.ServerError(w, mh.logger, "update master distributor aadhar front image", err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor aadhar image upload url generated successfully", "url": url})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor aadhar front image upload url generated successfully", "url": url})
 }
 
-// Update Master Distributor Pan Image
+// Update Master Distributor Aadhar Back Image Handler
+func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorAadharBackImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, mh.logger, "update master distributor aadhar back image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_aadhar_back_%d.png", id, id, time.Now().Unix())
+	url, err := mh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor aadhar back image", err)
+		return
+	}
+	err = mh.mdStore.UpdateMasterDistributorAadharBackImage(path, id)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor aadhar back image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor aadhar back image upload url generated successfully", "url": url})
+}
+
+// Update Master Distributor Pan Image Handler
 func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorPanImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
@@ -415,24 +437,90 @@ func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorPanImage(w http
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor pan image upload url generated successfully", "url": url})
 }
 
-// Update Master Distributor Image
-func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorImage(w http.ResponseWriter, r *http.Request) {
+// Update Master Distributor Pan With Agent Image Handler
+func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorPanWithAgentImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.BadRequest(w, mh.logger, "update master distributor image", err)
+		utils.BadRequest(w, mh.logger, "update master distributor pan with agent image", err)
 		return
 	}
-	path := fmt.Sprintf("documents/%s/%s_image_%d.png", id, id, time.Now().Unix())
+	path := fmt.Sprintf("documents/%s/%s_pan_with_agent_%d.png", id, id, time.Now().Unix())
 	url, err := mh.awss3.GenerateUploadPresignedURL(path)
 	if err != nil {
-		utils.ServerError(w, mh.logger, "update master distributor image", err)
+		utils.ServerError(w, mh.logger, "update master distributor pan with agent image", err)
 		return
 	}
-	err = mh.mdStore.UpdateMasterDistributorImage(path, id)
+	err = mh.mdStore.UpdateMasterDistributorPanWithAgentImage(path, id)
 	if err != nil {
-		utils.ServerError(w, mh.logger, "update master distributor image", err)
+		utils.ServerError(w, mh.logger, "update master distributor pan with agent image", err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor image upload url generated successfully", "url": url})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor pan with agent image upload url generated successfully", "url": url})
+}
+
+// Update Master Distributor Selfie Image Handler
+func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorSelfieImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, mh.logger, "update master distributor selfie image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_selfie_%d.png", id, id, time.Now().Unix())
+	url, err := mh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor selfie image", err)
+		return
+	}
+	err = mh.mdStore.UpdateMasterDistributorSelfieImage(path, id)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor selfie image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor selfie image upload url generated successfully", "url": url})
+}
+
+// Update Master Distributor Signature Image Handler
+func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorSignatureImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, mh.logger, "update master distributor signature image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_signature_%d.png", id, id, time.Now().Unix())
+	url, err := mh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor signature image", err)
+		return
+	}
+	err = mh.mdStore.UpdateMasterDistributorSignatureImage(path, id)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor signature image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor signature image upload url generated successfully", "url": url})
+}
+
+// Update Master Distributor Shop Image Handler
+func (mh *MasterDistributorHandler) HandleUpdateMasterDistributorShopImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, mh.logger, "update master distributor shop image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_shop_%d.png", id, id, time.Now().Unix())
+	url, err := mh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor shop image", err)
+		return
+	}
+	err = mh.mdStore.UpdateMasterDistributorShopImage(path, id)
+	if err != nil {
+		utils.ServerError(w, mh.logger, "update master distributor shop image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "master distributor shop image upload url generated successfully", "url": url})
 }

@@ -29,9 +29,13 @@ type MasterDistributorStore interface {
 	DeleteMasterDistributor(id string) error
 	GetMasterDistributorWalletBalance(id string) (float64, error)
 	UpdateMasterDistributorHoldAmount(id string, amount float64) error
-	UpdateMasterDistributorAadharImage(path, id string) error
+	UpdateMasterDistributorAadharFrontImage(path, id string) error
+	UpdateMasterDistributorAadharBackImage(path, id string) error
 	UpdateMasterDistributorPanImage(path, id string) error
-	UpdateMasterDistributorImage(path, id string) error
+	UpdateMasterDistributorPanWithAgentImage(path, id string) error
+	UpdateMasterDistributorSelfieImage(path, id string) error
+	UpdateMasterDistributorSignatureImage(path, id string) error
+	UpdateMasterDistributorShopImage(path, id string) error
 }
 
 // Create Master Distributor
@@ -221,9 +225,13 @@ func (ms *PostgresMasterDistributorStore) GetMasterDistributorByID(id string) (*
 		master_distributor_wallet_balance,
 		hold_amount,
 		is_master_distributor_blocked,
-		master_distributor_aadhar_image,
+		master_distributor_aadhar_front_image,
+		master_distributor_aadhar_back_image,
 		master_distributor_pan_image,
-		master_distributor_image,
+		master_distributor_pan_with_agent_image,
+		master_distributor_signature_image,
+		master_distributor_shop_image,
+		master_distributor_selfie_image,
 		created_at,
 		updated_at
 	FROM master_distributors
@@ -254,9 +262,13 @@ func (ms *PostgresMasterDistributorStore) GetMasterDistributorByID(id string) (*
 		&md.MasterDistributorWalletBalance,
 		&md.HoldAmount,
 		&md.IsMasterDistributorBlocked,
-		&md.MasterDistributorAadharImage,
+		&md.MasterDistributorAadharFrontImage,
+		&md.MasterDistributorAadharBackImage,
 		&md.MasterDistributorPanImage,
-		&md.MasterDistributorImage,
+		&md.MasterDistributorPanWithAgentImage,
+		&md.MasterDistributorSignatureImage,
+		&md.MasterDistributorShopImage,
+		&md.MasterDistributorSelfieImage,
 		&md.CreatedAT,
 		&md.UpdatedAT,
 	)
@@ -290,9 +302,13 @@ func (ms *PostgresMasterDistributorStore) GetMasterDistributorsByAdminID(adminID
 		master_distributor_wallet_balance,
 		hold_amount,
 		is_master_distributor_blocked,
-		master_distributor_aadhar_image,
+		master_distributor_aadhar_front_image,
+		master_distributor_aadhar_back_image,
 		master_distributor_pan_image,
-		master_distributor_image,
+		master_distributor_pan_with_agent_image,
+		master_distributor_signature_image,
+		master_distributor_shop_image,
+		master_distributor_selfie_image,
 		created_at,
 		updated_at
 	FROM master_distributors
@@ -336,9 +352,13 @@ func (ms *PostgresMasterDistributorStore) GetMasterDistributorsByAdminID(adminID
 			&md.MasterDistributorWalletBalance,
 			&md.HoldAmount,
 			&md.IsMasterDistributorBlocked,
-			&md.MasterDistributorAadharImage,
+			&md.MasterDistributorAadharFrontImage,
+			&md.MasterDistributorAadharBackImage,
 			&md.MasterDistributorPanImage,
-			&md.MasterDistributorImage,
+			&md.MasterDistributorPanWithAgentImage,
+			&md.MasterDistributorSignatureImage,
+			&md.MasterDistributorShopImage,
+			&md.MasterDistributorSelfieImage,
 			&md.CreatedAT,
 			&md.UpdatedAT,
 		)
@@ -369,12 +389,12 @@ func (ms *PostgresMasterDistributorStore) GetMasterDistributorDetailsForLogin(md
 		master_distributor_id,
 		master_distributor_name
 	FROM master_distributors
-	WHERE master_distributor_id = $1
+	WHERE master_distributor_phone = $1
 	AND master_distributor_password = $2
 	AND is_master_distributor_blocked = FALSE;
 	`
 
-	err := ms.db.QueryRow(query, md.MasterDistributorID, md.MasterDistributorPassword).Scan(
+	err := ms.db.QueryRow(query, md.MasterDistributorPhone, md.MasterDistributorPassword).Scan(
 		&md.MasterDistributorID,
 		&md.MasterDistributorName,
 	)
@@ -430,11 +450,28 @@ func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorHoldAmount(id s
 	return checkRowsAffected(res)
 }
 
-// Update Master Distributor Aadhar Image
-func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorAadharImage(path, id string) error {
+// Update Master Distributor Aadhar Front Image
+func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorAadharFrontImage(path, id string) error {
 	query := `
 		UPDATE master_distributors
-		SET master_distributor_aadhar_image = $1,
+		SET master_distributor_aadhar_front_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE master_distributor_id = $2;
+	`
+
+	res, err := ms.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Master Distributor Aadhar Back Image
+func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorAadharBackImage(path, id string) error {
+	query := `
+		UPDATE master_distributors
+		SET master_distributor_aadhar_back_image = $1,
 		updated_at = CURRENT_TIMESTAMP
 		WHERE master_distributor_id = $2;
 	`
@@ -464,11 +501,62 @@ func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorPanImage(path, 
 	return checkRowsAffected(res)
 }
 
-// Update Master Distributor Image
-func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorImage(path, id string) error {
+// Update Master Distributor Pan With Agent Image
+func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorPanWithAgentImage(path, id string) error {
 	query := `
 		UPDATE master_distributors
-		SET master_distributor_image = $1,
+		SET master_distributor_pan_with_agent_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE master_distributor_id = $2;
+	`
+
+	res, err := ms.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Master Distributor Selfie Image
+func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorSelfieImage(path, id string) error {
+	query := `
+		UPDATE master_distributors
+		SET master_distributor_selfie_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE master_distributor_id = $2;
+	`
+
+	res, err := ms.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Master Distributor Signature Image
+func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorSignatureImage(path, id string) error {
+	query := `
+		UPDATE master_distributors
+		SET master_distributor_signature_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE master_distributor_id = $2;
+	`
+
+	res, err := ms.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Master Distributor Shop Image
+func (ms *PostgresMasterDistributorStore) UpdateMasterDistributorShopImage(path, id string) error {
+	query := `
+		UPDATE master_distributors
+		SET master_distributor_shop_image = $1,
 		updated_at = CURRENT_TIMESTAMP
 		WHERE master_distributor_id = $2;
 	`

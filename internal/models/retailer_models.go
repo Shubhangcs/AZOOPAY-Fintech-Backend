@@ -30,9 +30,13 @@ type RetailerModel struct {
 	RetailerWalletBalance float64   `json:"retailer_wallet_balance"`
 	HoldAmount            float64   `json:"hold_amount"`
 	IsRetailerBlocked     bool      `json:"is_retailer_blocked"`
-	RetailerAadharImage   *string   `json:"retailer_aadhar_image"`
-	RetailerPanImage      *string   `json:"retailer_pan_image"`
-	RetailerImage         *string   `json:"retailer_image"`
+	RetailerAadharFrontImage  *string `json:"retailer_aadhar_front_image"`
+	RetailerAadharBackImage   *string `json:"retailer_aadhar_back_image"`
+	RetailerPanImage          *string `json:"retailer_pan_image"`
+	RetailerPanWithAgentImage *string `json:"retailer_pan_with_agent_image"`
+	RetailerSelfieImage       *string `json:"retailer_selfie_image"`
+	RetailerSignatureImage    *string `json:"retailer_signature_image"`
+	RetailerShopImage         *string `json:"retailer_shop_image"`
 	CreatedAT             time.Time `json:"created_at"`
 	UpdatedAT             time.Time `json:"updated_at"`
 }

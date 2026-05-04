@@ -35,10 +35,9 @@ func (v *VerifyBeneficiaryRequest) Validate() error {
 
 // VerifyBeneficiaryResponse mirrors the Paysprint penny drop response.
 type VerifyBeneficiaryResponse struct {
-	Status       bool   `json:"status"`
-	ResponseCode string `json:"response_code"`
-	Message      string `json:"message"`
-	Data         any    `json:"data"`
+	Status  int    `json:"status"`
+	Message string `json:"msg"`
+	Data    any    `json:"cardData"`
 }
 
 func (b *BeneficiaryModel) Validate() error {

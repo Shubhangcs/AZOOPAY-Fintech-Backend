@@ -104,25 +104,28 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		return
 	}
 
-	reqID := uuid.NewString()
-	token, err := utils.GeneratePaysprintToken(reqID)
-	if err != nil {
-		utils.ServerError(w, bh.logger, "verify beneficiary", err)
+	claims := r.Context().Value("claims").(*utils.TokenClaims)
+	retailerID := claims.UserID
+
+	partnerRequestID := uuid.NewString()
+
+	if err := bh.beneficiaryStore.ChargeForVerification(retailerID, partnerRequestID); err != nil {
+		utils.BadRequest(w, bh.logger, "verify beneficiary: wallet debit", err)
 		return
 	}
 
 	var apiResp models.VerifyBeneficiaryResponse
-	err = utils.PostRequest(utils.PaysprintAPI+utils.PennyDrop, "Token", token, map[string]any{
-		"refid":          reqID,
-		"account_number": req.AccountNumber,
-		"ifsc_code":      req.IFSCCode,
+	err := utils.PostRequest(utils.RechargeKitVerifyAPI+utils.PennyDrop, "Token", utils.RechargeKitAPIToken, map[string]any{
+		"partner_request_id": partnerRequestID,
+		"bank_account":       req.AccountNumber,
+		"ifsc_code":          req.IFSCCode,
 	}, &apiResp)
 	if err != nil {
 		utils.ServerError(w, bh.logger, "verify beneficiary: paysprint call", err)
 		return
 	}
 
-	if !apiResp.Status {
+	if apiResp.Status == 3 || apiResp.Status == 2 {
 		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New(apiResp.Message))
 		return
 	}
@@ -147,4 +150,25 @@ func (bh *BeneficiaryHandler) HandleGetBeneficiaries(w http.ResponseWriter, r *h
 	}
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiaries fetched successfully", "beneficiaries": beneficiaries})
+}
+
+// Get Beneficiary By Account Number Handler
+func (bh *BeneficiaryHandler) HandleGetBeneficiaryByAccountNumber(w http.ResponseWriter, r *http.Request) {
+	accountNumber := chi.URLParam(r, "account_number")
+	if accountNumber == "" {
+		utils.BadRequest(w, bh.logger, "get beneficiary by account number", errors.New("account_number is required"))
+		return
+	}
+
+	beneficiary, err := bh.beneficiaryStore.GetBeneficiaryByAccountNumber(accountNumber)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.BadRequest(w, bh.logger, "get beneficiary by account number", errors.New("beneficiary not found"))
+			return
+		}
+		utils.ServerError(w, bh.logger, "get beneficiary by account number", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary fetched successfully", "beneficiary": beneficiary})
 }

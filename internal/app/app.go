@@ -33,7 +33,6 @@ type Application struct {
 	DTHRechargeHandler       *handlers.DTHRechargeHandler
 	ElectricityBillHandler   *handlers.ElectricityBillHandler
 	LoginActivityHandler     *handlers.LoginActivityHandler
-	BusHandler               *handlers.BusHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -61,7 +60,7 @@ func NewApplication() (*Application, error) {
 	commisionStore := store.NewPostgresCommisionStore(pgdb)
 	transactionLimitStore := store.NewPostgresTransactionLimitStore(pgdb)
 	ticketStore := store.NewPostgresTicketStore(pgdb)
-	beneficiaryStore := store.NewPostgresBeneficiaryStore(pgdb)
+	beneficiaryStore := store.NewPostgresBeneficiaryStore(pgdb, walletTransactionStore)
 	revertTransactionStore := store.NewPostgresRevertTransactionStore(pgdb, walletTransactionStore)
 	payoutTransactionStore := store.NewPostgresPayoutTransactionStore(pgdb, commisionStore, walletTransactionStore, transactionLimitStore)
 	mobileRechargeStore := store.NewPostgresMobileRechargeStore(pgdb, walletTransactionStore)
@@ -90,7 +89,6 @@ func NewApplication() (*Application, error) {
 	dthRechargeHandler := handlers.NewDTHRechargeHandler(dthRechargeStore, apiDownStore, logger)
 	electricityBillHandler := handlers.NewElectricityBillHandler(electricityBillStore, apiDownStore, logger)
 	loginActivityHandler := handlers.NewLoginActivityHandler(loginActivityStore, logger)
-	busHandler := handlers.NewBusHandler(apiDownStore, logger)
 
 	return &Application{
 		Logger:                   logger,
@@ -114,7 +112,6 @@ func NewApplication() (*Application, error) {
 		DTHRechargeHandler:       dthRechargeHandler,
 		ElectricityBillHandler:   electricityBillHandler,
 		LoginActivityHandler:     loginActivityHandler,
-		BusHandler:               busHandler,
 	}, nil
 
 }

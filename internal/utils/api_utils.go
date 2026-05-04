@@ -10,16 +10,16 @@ import (
 )
 
 var (
-	PaysprintAPI        = os.Getenv("PAYSPRINT_API")
-	RechargeKitAPI1     = os.Getenv("RECHARGE_KIT_API_1")
-	RechargeKitAPI2     = os.Getenv("RECHARGE_KIT_API_2")
-	RechargeKitAPIToken = os.Getenv("RECHARGE_KIT_API_TOKEN")
+	RechargeKitAPI1      = os.Getenv("RECHARGE_KIT_API_1")
+	RechargeKitAPI2      = os.Getenv("RECHARGE_KIT_API_2")
+	RechargeKitVerifyAPI = os.Getenv("RECHARGE_KIT_VERIFY_API")
+	RechargeKitAPIToken  = os.Getenv("RECHARGE_KIT_API_TOKEN")
 )
 
 const (
-	PennyDrop      = "/api/v1/verification/penny_drop_v2"
-	Payout         = "/rkitpayout/payoutTransfer"
-	PayoutStatus   = "/recharge/statusCheck"
+	PennyDrop              = "/validation/verifyBankRequest"
+	Payout                 = "/rkitpayout/payoutTransfer"
+	PayoutStatus           = "/recharge/statusCheck"
 	MobileRecharge         = "/recharge/prepaid"
 	PostpaidMobileRecharge = "/recharge/postpaid"
 	PrepaidPlanFetch       = "/recharge/prepaidPlanFetch"

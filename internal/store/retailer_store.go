@@ -32,9 +32,13 @@ type RetailerStore interface {
 	GetRetailersByAdminIDForDropdown(adminID string) ([]models.DropdownItem, error)
 	ChangeRetailersDistributor(retailerID, distributorID string) error
 	DeleteRetailer(id string) error
-	UpdateRetailerAadharImage(path, id string) error
+	UpdateRetailerAadharFrontImage(path, id string) error
+	UpdateRetailerAadharBackImage(path, id string) error
 	UpdateRetailerPanImage(path, id string) error
-	UpdateRetailerImage(path, id string) error
+	UpdateRetailerPanWithAgentImage(path, id string) error
+	UpdateRetailerSelfieImage(path, id string) error
+	UpdateRetailerSignatureImage(path, id string) error
+	UpdateRetailerShopImage(path, id string) error
 	GetRetailerWalletBalance(id string) (float64, error)
 	UpdateRetailerHoldAmount(id string, amount float64) error
 }
@@ -226,9 +230,13 @@ func (rs *PostgresRetailerStore) GetRetailerByID(id string) (*models.RetailerMod
 		retailer_wallet_balance,
 		hold_amount,
 		is_retailer_blocked,
-		retailer_aadhar_image,
+		retailer_aadhar_front_image,
+		retailer_aadhar_back_image,
 		retailer_pan_image,
-		retailer_image,
+		retailer_pan_with_agent_image,
+		retailer_signature_image,
+		retailer_shop_image,
+		retailer_selfie_image,
 		created_at,
 		updated_at
 	FROM retailers
@@ -259,9 +267,13 @@ func (rs *PostgresRetailerStore) GetRetailerByID(id string) (*models.RetailerMod
 		&re.RetailerWalletBalance,
 		&re.HoldAmount,
 		&re.IsRetailerBlocked,
-		&re.RetailerAadharImage,
+		&re.RetailerAadharFrontImage,
+		&re.RetailerAadharBackImage,
 		&re.RetailerPanImage,
-		&re.RetailerImage,
+		&re.RetailerPanWithAgentImage,
+		&re.RetailerSignatureImage,
+		&re.RetailerShopImage,
+		&re.RetailerSelfieImage,
 		&re.CreatedAT,
 		&re.UpdatedAT,
 	)
@@ -279,8 +291,9 @@ func (rs *PostgresRetailerStore) GetRetailersByDistributorID(distributorID strin
 		retailer_city, retailer_state, retailer_address, retailer_pincode,
 		retailer_business_name, retailer_business_type, retailer_gst_number,
 		retailer_kyc_status, retailer_wallet_balance, hold_amount,
-		is_retailer_blocked, retailer_aadhar_image, retailer_pan_image,
-		retailer_image, created_at, updated_at
+		is_retailer_blocked, retailer_aadhar_front_image, retailer_aadhar_back_image,
+		retailer_pan_image, retailer_pan_with_agent_image, retailer_signature_image,
+		retailer_shop_image, retailer_selfie_image, created_at, updated_at
 	FROM retailers
 	WHERE distributor_id = $1
 	ORDER BY created_at DESC
@@ -342,12 +355,12 @@ func (rs *PostgresRetailerStore) GetRetailerDetailsForLogin(re *models.RetailerM
 		retailer_id,
 		retailer_name
 	FROM retailers
-	WHERE retailer_id = $1
+	WHERE retailer_phone = $1
 	AND retailer_password = $2
 	AND is_retailer_blocked = FALSE;
 	`
 
-	err := rs.db.QueryRow(query, re.RetailerID, re.RetailerPassword).Scan(
+	err := rs.db.QueryRow(query, re.RetailerPhone, re.RetailerPassword).Scan(
 		&re.RetailerID,
 		&re.RetailerName,
 	)
@@ -445,9 +458,13 @@ func scanRetailers(db *sql.DB, query string, args ...any) ([]models.RetailerMode
 			&re.RetailerWalletBalance,
 			&re.HoldAmount,
 			&re.IsRetailerBlocked,
-			&re.RetailerAadharImage,
+			&re.RetailerAadharFrontImage,
+			&re.RetailerAadharBackImage,
 			&re.RetailerPanImage,
-			&re.RetailerImage,
+			&re.RetailerPanWithAgentImage,
+			&re.RetailerSignatureImage,
+			&re.RetailerShopImage,
+			&re.RetailerSelfieImage,
 			&re.CreatedAT,
 			&re.UpdatedAT,
 		)
@@ -474,11 +491,27 @@ func (rs *PostgresRetailerStore) ChangeRetailersDistributor(retailerID, distribu
 	return checkRowsAffected(res)
 }
 
-// Update Retailer Aadhar Image
-func (rs *PostgresRetailerStore) UpdateRetailerAadharImage(path, id string) error {
+// Update Retailer Aadhar Front Image
+func (rs *PostgresRetailerStore) UpdateRetailerAadharFrontImage(path, id string) error {
 	query := `
 		UPDATE retailers
-		SET retailer_aadhar_image = $1,
+		SET retailer_aadhar_front_image = $1,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE retailer_id = $2;
+	`
+	res, err := rs.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Retailer Aadhar Back Image
+func (rs *PostgresRetailerStore) UpdateRetailerAadharBackImage(path, id string) error {
+	query := `
+		UPDATE retailers
+		SET retailer_aadhar_back_image = $1,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE retailer_id = $2;
 	`
@@ -506,11 +539,59 @@ func (rs *PostgresRetailerStore) UpdateRetailerPanImage(path, id string) error {
 	return checkRowsAffected(res)
 }
 
-// Update Retailer Image
-func (rs *PostgresRetailerStore) UpdateRetailerImage(path, id string) error {
+// Update Retailer Pan With Agent Image
+func (rs *PostgresRetailerStore) UpdateRetailerPanWithAgentImage(path, id string) error {
 	query := `
 		UPDATE retailers
-		SET retailer_image = $1,
+		SET retailer_pan_with_agent_image = $1,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE retailer_id = $2;
+	`
+	res, err := rs.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Retailer Selfie Image
+func (rs *PostgresRetailerStore) UpdateRetailerSelfieImage(path, id string) error {
+	query := `
+		UPDATE retailers
+		SET retailer_selfie_image = $1,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE retailer_id = $2;
+	`
+	res, err := rs.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Retailer Signature Image
+func (rs *PostgresRetailerStore) UpdateRetailerSignatureImage(path, id string) error {
+	query := `
+		UPDATE retailers
+		SET retailer_signature_image = $1,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE retailer_id = $2;
+	`
+	res, err := rs.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Retailer Shop Image
+func (rs *PostgresRetailerStore) UpdateRetailerShopImage(path, id string) error {
+	query := `
+		UPDATE retailers
+		SET retailer_shop_image = $1,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE retailer_id = $2;
 	`

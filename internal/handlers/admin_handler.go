@@ -252,8 +252,8 @@ func (ah *AdminHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if req.AdminID == "" || req.AdminPassword == "" {
-		utils.BadRequest(w, ah.logger, "admin login", errors.New("id and password are required"))
+	if req.AdminPhone == "" || req.AdminPassword == "" {
+		utils.BadRequest(w, ah.logger, "admin login", errors.New("phone and password are required"))
 		return
 	}
 

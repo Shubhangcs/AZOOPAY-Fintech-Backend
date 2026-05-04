@@ -13,5 +13,4 @@ const (
 	ServiceMobileRecharge  = "mobile_recharge"
 	ServiceDTHRecharge     = "dth_recharge"
 	ServiceElectricityBill = "electricity_bill"
-	ServiceBusTicket       = "bus_ticket"
 )

@@ -300,8 +300,8 @@ func (dh *DistributorHandler) HandleDistributorLogin(w http.ResponseWriter, r *h
 		return
 	}
 
-	if req.DistributorID == "" || req.DistributorPassword == "" {
-		utils.BadRequest(w, dh.logger, "distributor login", errors.New("id and password are required"))
+	if req.DistributorPhone == "" || req.DistributorPassword == "" {
+		utils.BadRequest(w, dh.logger, "distributor login", errors.New("phone and password are required"))
 		return
 	}
 
@@ -389,26 +389,48 @@ func (dh *DistributorHandler) HandleChangeDistributorsMasterDistributor(w http.R
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor master distributor updated successfully"})
 }
 
-// Update Distributor Aadhar Image Handler
-func (dh *DistributorHandler) HandleUpdateDistributorAadharImage(w http.ResponseWriter, r *http.Request) {
+// Update Distributor Aadhar Front Image Handler
+func (dh *DistributorHandler) HandleUpdateDistributorAadharFrontImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.BadRequest(w, dh.logger, "update distributor aadhar image", err)
+		utils.BadRequest(w, dh.logger, "update distributor aadhar front image", err)
 		return
 	}
-	path := fmt.Sprintf("documents/%s/%s_aadhar_%d.png", id, id, time.Now().Unix())
+	path := fmt.Sprintf("documents/%s/%s_aadhar_front_%d.png", id, id, time.Now().Unix())
 	url, err := dh.awss3.GenerateUploadPresignedURL(path)
 	if err != nil {
-		utils.ServerError(w, dh.logger, "update distributor aadhar image", err)
+		utils.ServerError(w, dh.logger, "update distributor aadhar front image", err)
 		return
 	}
-	err = dh.distributorStore.UpdateDistributorAadharImage(path, id)
+	err = dh.distributorStore.UpdateDistributorAadharFrontImage(path, id)
 	if err != nil {
-		utils.ServerError(w, dh.logger, "update distributor aadhar image", err)
+		utils.ServerError(w, dh.logger, "update distributor aadhar front image", err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor aadhar image upload url generated successfully", "url": url})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor aadhar front image upload url generated successfully", "url": url})
+}
+
+// Update Distributor Aadhar Back Image Handler
+func (dh *DistributorHandler) HandleUpdateDistributorAadharBackImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, dh.logger, "update distributor aadhar back image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_aadhar_back_%d.png", id, id, time.Now().Unix())
+	url, err := dh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor aadhar back image", err)
+		return
+	}
+	err = dh.distributorStore.UpdateDistributorAadharBackImage(path, id)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor aadhar back image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor aadhar back image upload url generated successfully", "url": url})
 }
 
 // Update Distributor Pan Image Handler
@@ -433,26 +455,92 @@ func (dh *DistributorHandler) HandleUpdateDistributorPanImage(w http.ResponseWri
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor pan image upload url generated successfully", "url": url})
 }
 
-// Update Distributor Image Handler
-func (dh *DistributorHandler) HandleUpdateDistributorImage(w http.ResponseWriter, r *http.Request) {
+// Update Distributor Pan With Agent Image Handler
+func (dh *DistributorHandler) HandleUpdateDistributorPanWithAgentImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.BadRequest(w, dh.logger, "update distributor image", err)
+		utils.BadRequest(w, dh.logger, "update distributor pan with agent image", err)
 		return
 	}
-	path := fmt.Sprintf("documents/%s/%s_image_%d.png", id, id, time.Now().Unix())
+	path := fmt.Sprintf("documents/%s/%s_pan_with_agent_%d.png", id, id, time.Now().Unix())
 	url, err := dh.awss3.GenerateUploadPresignedURL(path)
 	if err != nil {
-		utils.ServerError(w, dh.logger, "update distributor image", err)
+		utils.ServerError(w, dh.logger, "update distributor pan with agent image", err)
 		return
 	}
-	err = dh.distributorStore.UpdateDistributorImage(path, id)
+	err = dh.distributorStore.UpdateDistributorPanWithAgentImage(path, id)
 	if err != nil {
-		utils.ServerError(w, dh.logger, "update distributor image", err)
+		utils.ServerError(w, dh.logger, "update distributor pan with agent image", err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor image upload url generated successfully", "url": url})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor pan with agent image upload url generated successfully", "url": url})
+}
+
+// Update Distributor Selfie Image Handler
+func (dh *DistributorHandler) HandleUpdateDistributorSelfieImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, dh.logger, "update distributor selfie image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_selfie_%d.png", id, id, time.Now().Unix())
+	url, err := dh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor selfie image", err)
+		return
+	}
+	err = dh.distributorStore.UpdateDistributorSelfieImage(path, id)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor selfie image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor selfie image upload url generated successfully", "url": url})
+}
+
+// Update Distributor Signature Image Handler
+func (dh *DistributorHandler) HandleUpdateDistributorSignatureImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, dh.logger, "update distributor signature image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_signature_%d.png", id, id, time.Now().Unix())
+	url, err := dh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor signature image", err)
+		return
+	}
+	err = dh.distributorStore.UpdateDistributorSignatureImage(path, id)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor signature image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor signature image upload url generated successfully", "url": url})
+}
+
+// Update Distributor Shop Image Handler
+func (dh *DistributorHandler) HandleUpdateDistributorShopImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, dh.logger, "update distributor shop image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_shop_%d.png", id, id, time.Now().Unix())
+	url, err := dh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor shop image", err)
+		return
+	}
+	err = dh.distributorStore.UpdateDistributorShopImage(path, id)
+	if err != nil {
+		utils.ServerError(w, dh.logger, "update distributor shop image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "distributor shop image upload url generated successfully", "url": url})
 }
 
 // Get Distributor Wallet Balance Handler

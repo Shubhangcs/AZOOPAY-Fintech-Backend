@@ -33,7 +33,6 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	dthRechargeRoutes(router, app)
 	electricityBillRoutes(router, app)
 	loginActivityRoutes(router, app)
-	busRoutes(router, app)
 	apiDownRoutes(router, app)
 
 	return router
@@ -77,9 +76,13 @@ func masterDistributorRoutes(router *chi.Mux, app *app.Application) {
 		r.Patch("/update/{id}/mpin", app.MasterDistributorHandler.HandleUpdateMasterDistributorMpin)
 		r.Patch("/update/{id}/kyc", app.MasterDistributorHandler.HandleUpdateMasterDistributorKYCStatus)
 		r.Patch("/update/{id}/block", app.MasterDistributorHandler.HandleUpdateMasterDistributorBlockStatus)
-		r.Patch("/update/{id}/aadhar", app.MasterDistributorHandler.HandleUpdateMasterDistributorAadharImage)
+		r.Patch("/update/{id}/aadhar/front", app.MasterDistributorHandler.HandleUpdateMasterDistributorAadharFrontImage)
+		r.Patch("/update/{id}/aadhar/back", app.MasterDistributorHandler.HandleUpdateMasterDistributorAadharBackImage)
 		r.Patch("/update/{id}/pan", app.MasterDistributorHandler.HandleUpdateMasterDistributorPanImage)
-		r.Patch("/update/{id}/image", app.MasterDistributorHandler.HandleUpdateMasterDistributorImage)
+		r.Patch("/update/{id}/pan/agent", app.MasterDistributorHandler.HandleUpdateMasterDistributorPanWithAgentImage)
+		r.Patch("/update/{id}/image/selfie", app.MasterDistributorHandler.HandleUpdateMasterDistributorSelfieImage)
+		r.Patch("/update/{id}/image/signature", app.MasterDistributorHandler.HandleUpdateMasterDistributorSignatureImage)
+		r.Patch("/update/{id}/image/shop", app.MasterDistributorHandler.HandleUpdateMasterDistributorShopImage)
 		r.Patch("/update/{id}/hold-amount", app.MasterDistributorHandler.HandleUpdateMasterDistributorHoldAmount)
 		r.Delete("/delete/{id}", app.MasterDistributorHandler.HandleDeleteMasterDistributor)
 	})
@@ -107,9 +110,13 @@ func retailerRoutes(router *chi.Mux, app *app.Application) {
 		r.Patch("/update/{id}/kyc", app.RetailerHandler.HandleUpdateRetailerKYCStatus)
 		r.Patch("/update/{id}/block", app.RetailerHandler.HandleUpdateRetailerBlockStatus)
 		r.Patch("/change/{id}/distributor", app.RetailerHandler.HandleChangeRetailersDistributor)
-		r.Patch("/update/{id}/aadhar", app.RetailerHandler.HandleUpdateRetailerAadharImage)
+		r.Patch("/update/{id}/aadhar/front", app.RetailerHandler.HandleUpdateRetailerAadharFrontImage)
+		r.Patch("/update/{id}/aadhar/back", app.RetailerHandler.HandleUpdateRetailerAadharBackImage)
 		r.Patch("/update/{id}/pan", app.RetailerHandler.HandleUpdateRetailerPanImage)
-		r.Patch("/update/{id}/image", app.RetailerHandler.HandleUpdateRetailerImage)
+		r.Patch("/update/{id}/pan/agent", app.RetailerHandler.HandleUpdateRetailerPanWithAgentImage)
+		r.Patch("/update/{id}/image/selfie", app.RetailerHandler.HandleUpdateRetailerSelfieImage)
+		r.Patch("/update/{id}/image/signature", app.RetailerHandler.HandleUpdateRetailerSignatureImage)
+		r.Patch("/update/{id}/image/shop", app.RetailerHandler.HandleUpdateRetailerShopImage)
 		r.Patch("/update/{id}/hold-amount", app.RetailerHandler.HandleUpdateRetailerHoldAmount)
 		r.Delete("/delete/{id}", app.RetailerHandler.HandleDeleteRetailer)
 	})
@@ -135,9 +142,13 @@ func distributorRoutes(router *chi.Mux, app *app.Application) {
 		r.Patch("/update/{id}/kyc", app.DistributorHandler.HandleUpdateDistributorKYCStatus)
 		r.Patch("/update/{id}/block", app.DistributorHandler.HandleUpdateDistributorBlockStatus)
 		r.Patch("/change/{id}/md", app.DistributorHandler.HandleChangeDistributorsMasterDistributor)
-		r.Patch("/update/{id}/aadhar", app.DistributorHandler.HandleUpdateDistributorAadharImage)
+		r.Patch("/update/{id}/aadhar/front", app.DistributorHandler.HandleUpdateDistributorAadharFrontImage)
+		r.Patch("/update/{id}/aadhar/back", app.DistributorHandler.HandleUpdateDistributorAadharBackImage)
 		r.Patch("/update/{id}/pan", app.DistributorHandler.HandleUpdateDistributorPanImage)
-		r.Patch("/update/{id}/image", app.DistributorHandler.HandleUpdateDistributorImage)
+		r.Patch("/update/{id}/pan/agent", app.DistributorHandler.HandleUpdateDistributorPanWithAgentImage)
+		r.Patch("/update/{id}/image/selfie", app.DistributorHandler.HandleUpdateDistributorSelfieImage)
+		r.Patch("/update/{id}/image/shop", app.DistributorHandler.HandleUpdateDistributorShopImage)
+		r.Patch("/update/{id}/image/signature", app.DistributorHandler.HandleUpdateDistributorSignatureImage)
 		r.Patch("/update/{id}/hold-amount", app.DistributorHandler.HandleUpdateDistributorHoldAmount)
 		r.Delete("/delete/{id}", app.DistributorHandler.HandleDeleteDistributor)
 	})
@@ -176,6 +187,7 @@ func beneficiaryRoutes(router *chi.Mux, app *app.Application) {
 		r.Put("/update/{id}", app.BeneficiaryHandler.HandleUpdateBeneficiary)
 		r.Delete("/delete/{id}", app.BeneficiaryHandler.HandleDeleteBeneficiary)
 		r.Get("/mobile/{mobile}", app.BeneficiaryHandler.HandleGetBeneficiaries)
+		r.Get("/account/{account_number}", app.BeneficiaryHandler.HandleGetBeneficiaryByAccountNumber)
 		r.Post("/verify", app.BeneficiaryHandler.HandleVerifyBeneficiary)
 	})
 }
@@ -326,22 +338,9 @@ func electricityBillRoutes(router *chi.Mux, app *app.Application) {
 	})
 }
 
-func busRoutes(router *chi.Mux, app *app.Application) {
-	router.Route("/bus", func(r chi.Router) {
-		// r.Use(middlewares.AuthorizationMiddleware)
-
-		r.Get("/stations", app.BusHandler.HandleGetBusStations)
-		r.Get("/operators", app.BusHandler.HandleGetBusOperators)
-		r.Post("/available-services", app.BusHandler.HandleGetAvailableServices)
-		r.Post("/seat-map", app.BusHandler.HandleGetServiceSeatingLayout)
-		r.Post("/block-tickets", app.BusHandler.HandleBlockBusTicket)
-	})
-}
-
 func loginActivityRoutes(router *chi.Mux, app *app.Application) {
 	router.Route("/login-activity", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
-
 		r.Get("/all", app.LoginActivityHandler.HandleGetAllLoginActivities)
 		r.Get("/user/{id}", app.LoginActivityHandler.HandleGetLoginActivitiesByUserID)
 	})

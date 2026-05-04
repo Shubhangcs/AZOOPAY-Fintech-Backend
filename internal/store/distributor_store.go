@@ -30,9 +30,13 @@ type DistributorStore interface {
 	GetDistributorsByAdminIDForDropdown(adminID string) ([]models.DropdownItem, error)
 	ChangeDistributorsMasterDistributor(distributorID, masterDistributorID string) error
 	DeleteDistributor(id string) error
-	UpdateDistributorAadharImage(path, id string) error
+	UpdateDistributorAadharFrontImage(path, id string) error
+	UpdateDistributorAadharBackImage(path, id string) error
 	UpdateDistributorPanImage(path, id string) error
-	UpdateDistributorImage(path, id string) error
+	UpdateDistributorPanWithAgentImage(path, id string) error
+	UpdateDistributorShopImage(path, id string) error
+	UpdateDistributorSignatureImage(path, id string) error
+	UpdateDistributorSelfieImage(path, id string) error
 	GetDistributorWalletBalance(id string) (float64, error)
 	UpdateDistributorHoldAmount(id string, amount float64) error
 }
@@ -224,9 +228,13 @@ func (ds *PostgresDistributorStore) GetDistributorByID(id string) (*models.Distr
 		distributor_wallet_balance,
 		hold_amount,
 		is_distributor_blocked,
-		distributor_aadhar_image,
+		distributor_aadhar_front_image,
+		distributor_aadhar_back_image,
 		distributor_pan_image,
-		distributor_image,
+		distributor_pan_with_agent_image,
+		distributor_signature_image,
+		distributor_shop_image,
+		distributor_selfie_image,
 		created_at,
 		updated_at
 	FROM distributors
@@ -257,9 +265,13 @@ func (ds *PostgresDistributorStore) GetDistributorByID(id string) (*models.Distr
 		&d.DistributorWalletBalance,
 		&d.HoldAmount,
 		&d.IsDistributorBlocked,
-		&d.DistributorAadharImage,
+		&d.DistributorAadharFrontImage,
+		&d.DistributorAadharBackImage,
 		&d.DistributorPanImage,
-		&d.DistributorImage,
+		&d.DistributorPanWithAgentImage,
+		&d.DistributorSignatureImage,
+		&d.DistributorShopImage,
+		&d.DistributorSelfieImage,
 		&d.CreatedAT,
 		&d.UpdatedAT,
 	)
@@ -293,9 +305,13 @@ func (ds *PostgresDistributorStore) GetDistributorsByMasterDistributorID(masterD
 		distributor_wallet_balance,
 		hold_amount,
 		is_distributor_blocked,
-		distributor_aadhar_image,
+		distributor_aadhar_front_image,
+		distributor_aadhar_back_image,
 		distributor_pan_image,
-		distributor_image,
+		distributor_pan_with_agent_image,
+		distributor_signature_image,
+		distributor_shop_image,
+		distributor_selfie_image,
 		created_at,
 		updated_at
 	FROM distributors
@@ -333,9 +349,13 @@ func (ds *PostgresDistributorStore) GetDistributorsByAdminID(adminID string, lim
 		d.distributor_wallet_balance,
 		d.hold_amount,
 		d.is_distributor_blocked,
-		d.distributor_aadhar_image,
+		d.distributor_aadhar_front_image,
+		d.distributor_aadhar_back_image,
 		d.distributor_pan_image,
-		d.distributor_image,
+		d.distributor_pan_with_agent_image,
+		d.distributor_signature_image,
+		d.distributor_shop_image,
+		d.distributor_selfie_image,
 		d.created_at,
 		d.updated_at
 	FROM distributors d
@@ -378,12 +398,12 @@ func (ds *PostgresDistributorStore) GetDistributorDetailsForLogin(d *models.Dist
 		distributor_id,
 		distributor_name
 	FROM distributors
-	WHERE distributor_id = $1
+	WHERE distributor_phone = $1
 	AND distributor_password = $2
 	AND is_distributor_blocked = FALSE;
 	`
 
-	err := ds.db.QueryRow(query, d.DistributorID, d.DistributorPassword).Scan(
+	err := ds.db.QueryRow(query, d.DistributorPhone, d.DistributorPassword).Scan(
 		&d.DistributorID,
 		&d.DistributorName,
 	)
@@ -445,9 +465,13 @@ func scanDistributors(db *sql.DB, query string, args ...any) ([]models.Distribut
 			&d.DistributorWalletBalance,
 			&d.HoldAmount,
 			&d.IsDistributorBlocked,
-			&d.DistributorAadharImage,
+			&d.DistributorAadharFrontImage,
+			&d.DistributorAadharBackImage,
 			&d.DistributorPanImage,
-			&d.DistributorImage,
+			&d.DistributorPanWithAgentImage,
+			&d.DistributorSignatureImage,
+			&d.DistributorShopImage,
+			&d.DistributorSelfieImage,
 			&d.CreatedAT,
 			&d.UpdatedAT,
 		)
@@ -473,11 +497,28 @@ func (ds *PostgresDistributorStore) ChangeDistributorsMasterDistributor(distribu
 	return checkRowsAffected(res)
 }
 
-// Update Distributor Aadhar Image
-func (ds *PostgresDistributorStore) UpdateDistributorAadharImage(path, id string) error {
+// Update Distributor Aadhar Front Image
+func (ds *PostgresDistributorStore) UpdateDistributorAadharFrontImage(path, id string) error {
 	query := `
 		UPDATE distributors
-		SET distributor_aadhar_image = $1,
+		SET distributor_aadhar_front_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE distributor_id = $2;
+	`
+
+	res, err := ds.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Distributor Aadhar Back Image
+func (ds *PostgresDistributorStore) UpdateDistributorAadharBackImage(path, id string) error {
+	query := `
+		UPDATE distributors
+		SET distributor_aadhar_back_image = $1,
 		updated_at = CURRENT_TIMESTAMP
 		WHERE distributor_id = $2;
 	`
@@ -507,11 +548,62 @@ func (ds *PostgresDistributorStore) UpdateDistributorPanImage(path, id string) e
 	return checkRowsAffected(res)
 }
 
-// Update Distributor Image
-func (ds *PostgresDistributorStore) UpdateDistributorImage(path, id string) error {
+// Update Distributor Pan With Agent Image
+func (ds *PostgresDistributorStore) UpdateDistributorPanWithAgentImage(path, id string) error {
 	query := `
 		UPDATE distributors
-		SET distributor_image = $1,
+		SET distributor_pan_with_agent_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE distributor_id = $2;
+	`
+
+	res, err := ds.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Distributor Shop Image
+func (ds *PostgresDistributorStore) UpdateDistributorShopImage(path, id string) error {
+	query := `
+		UPDATE distributors
+		SET distributor_shop_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE distributor_id = $2;
+	`
+
+	res, err := ds.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Distributor Signature Image
+func (ds *PostgresDistributorStore) UpdateDistributorSignatureImage(path, id string) error {
+	query := `
+		UPDATE distributors
+		SET distributor_signature_image = $1,
+		updated_at = CURRENT_TIMESTAMP
+		WHERE distributor_id = $2;
+	`
+
+	res, err := ds.db.Exec(query, path, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+// Update Distributor Selfie Image
+func (ds *PostgresDistributorStore) UpdateDistributorSelfieImage(path, id string) error {
+	query := `
+		UPDATE distributors
+		SET distributor_selfie_image = $1,
 		updated_at = CURRENT_TIMESTAMP
 		WHERE distributor_id = $2;
 	`
@@ -543,6 +635,7 @@ func (ds *PostgresDistributorStore) GetDistributorWalletBalance(id string) (floa
 	return balance, err
 }
 
+// Update Distributor Hold Amount
 func (ds *PostgresDistributorStore) UpdateDistributorHoldAmount(id string, amount float64) error {
 	res, err := ds.db.Exec(
 		`UPDATE distributors SET hold_amount = $1, updated_at = CURRENT_TIMESTAMP WHERE distributor_id = $2`,

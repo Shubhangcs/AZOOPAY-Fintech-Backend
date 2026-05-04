@@ -285,8 +285,8 @@ func (rh *RetailerHandler) HandleRetailerLogin(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if req.RetailerID == "" || req.RetailerPassword == "" {
-		utils.BadRequest(w, rh.logger, "retailer login", errors.New("id and password are required"))
+	if req.RetailerPhone == "" || req.RetailerPassword == "" {
+		utils.BadRequest(w, rh.logger, "retailer login", errors.New("phone and password are required"))
 		return
 	}
 
@@ -425,29 +425,51 @@ func (rh *RetailerHandler) HandleChangeRetailersDistributor(w http.ResponseWrite
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer distributor updated successfully"})
 }
 
-// Update Retailer Aadhar Image
-func (rh *RetailerHandler) HandleUpdateRetailerAadharImage(w http.ResponseWriter, r *http.Request) {
+// Update Retailer Aadhar Front Image Handler
+func (rh *RetailerHandler) HandleUpdateRetailerAadharFrontImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.BadRequest(w, rh.logger, "update retailer aadhar image", err)
+		utils.BadRequest(w, rh.logger, "update retailer aadhar front image", err)
 		return
 	}
-	path := fmt.Sprintf("documents/%s/%s_aadhar_%d.png", id, id, time.Now().Unix())
+	path := fmt.Sprintf("documents/%s/%s_aadhar_front_%d.png", id, id, time.Now().Unix())
 	url, err := rh.awss3.GenerateUploadPresignedURL(path)
 	if err != nil {
-		utils.ServerError(w, rh.logger, "update retailer aadhar image", err)
+		utils.ServerError(w, rh.logger, "update retailer aadhar front image", err)
 		return
 	}
-	err = rh.retailerStore.UpdateRetailerAadharImage(path, id)
+	err = rh.retailerStore.UpdateRetailerAadharFrontImage(path, id)
 	if err != nil {
-		utils.ServerError(w, rh.logger, "update retailer aadhar image", err)
+		utils.ServerError(w, rh.logger, "update retailer aadhar front image", err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer aadhar image upload url generated successfully", "url": url})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer aadhar front image upload url generated successfully", "url": url})
 }
 
-// Update Retailer Pan Image
+// Update Retailer Aadhar Back Image Handler
+func (rh *RetailerHandler) HandleUpdateRetailerAadharBackImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, "update retailer aadhar back image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_aadhar_back_%d.png", id, id, time.Now().Unix())
+	url, err := rh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer aadhar back image", err)
+		return
+	}
+	err = rh.retailerStore.UpdateRetailerAadharBackImage(path, id)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer aadhar back image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer aadhar back image upload url generated successfully", "url": url})
+}
+
+// Update Retailer Pan Image Handler
 func (rh *RetailerHandler) HandleUpdateRetailerPanImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
@@ -469,26 +491,92 @@ func (rh *RetailerHandler) HandleUpdateRetailerPanImage(w http.ResponseWriter, r
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer pan image upload url generated successfully", "url": url})
 }
 
-// Update Retailer Image
-func (rh *RetailerHandler) HandleUpdateRetailerImage(w http.ResponseWriter, r *http.Request) {
+// Update Retailer Pan With Agent Image Handler
+func (rh *RetailerHandler) HandleUpdateRetailerPanWithAgentImage(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.BadRequest(w, rh.logger, "update retailer image", err)
+		utils.BadRequest(w, rh.logger, "update retailer pan with agent image", err)
 		return
 	}
-	path := fmt.Sprintf("documents/%s/%s_image_%d.png", id, id, time.Now().Unix())
+	path := fmt.Sprintf("documents/%s/%s_pan_with_agent_%d.png", id, id, time.Now().Unix())
 	url, err := rh.awss3.GenerateUploadPresignedURL(path)
 	if err != nil {
-		utils.ServerError(w, rh.logger, "update retailer image", err)
+		utils.ServerError(w, rh.logger, "update retailer pan with agent image", err)
 		return
 	}
-	err = rh.retailerStore.UpdateRetailerImage(path, id)
+	err = rh.retailerStore.UpdateRetailerPanWithAgentImage(path, id)
 	if err != nil {
-		utils.ServerError(w, rh.logger, "update retailer image", err)
+		utils.ServerError(w, rh.logger, "update retailer pan with agent image", err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer image upload url generated successfully", "url": url})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer pan with agent image upload url generated successfully", "url": url})
+}
+
+// Update Retailer Selfie Image Handler
+func (rh *RetailerHandler) HandleUpdateRetailerSelfieImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, "update retailer selfie image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_selfie_%d.png", id, id, time.Now().Unix())
+	url, err := rh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer selfie image", err)
+		return
+	}
+	err = rh.retailerStore.UpdateRetailerSelfieImage(path, id)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer selfie image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer selfie image upload url generated successfully", "url": url})
+}
+
+// Update Retailer Signature Image Handler
+func (rh *RetailerHandler) HandleUpdateRetailerSignatureImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, "update retailer signature image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_signature_%d.png", id, id, time.Now().Unix())
+	url, err := rh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer signature image", err)
+		return
+	}
+	err = rh.retailerStore.UpdateRetailerSignatureImage(path, id)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer signature image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer signature image upload url generated successfully", "url": url})
+}
+
+// Update Retailer Shop Image Handler
+func (rh *RetailerHandler) HandleUpdateRetailerShopImage(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, "update retailer shop image", err)
+		return
+	}
+	path := fmt.Sprintf("documents/%s/%s_shop_%d.png", id, id, time.Now().Unix())
+	url, err := rh.awss3.GenerateUploadPresignedURL(path)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer shop image", err)
+		return
+	}
+	err = rh.retailerStore.UpdateRetailerShopImage(path, id)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "update retailer shop image", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer shop image upload url generated successfully", "url": url})
 }
 
 // Get Retailer Wallet Balance

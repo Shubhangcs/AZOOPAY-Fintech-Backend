@@ -30,9 +30,13 @@ type MasterDistributorModel struct {
 	MasterDistributorWalletBalance float64   `json:"master_distributor_wallet_balance"`
 	HoldAmount                     float64   `json:"hold_amount"`
 	IsMasterDistributorBlocked     bool      `json:"is_master_distributor_blocked"`
-	MasterDistributorAadharImage   *string   `json:"master_distributor_aadhar_image"`
-	MasterDistributorPanImage      *string   `json:"master_distributor_pan_image"`
-	MasterDistributorImage         *string   `json:"master_distributor_image"`
+	MasterDistributorAadharFrontImage  *string `json:"master_distributor_aadhar_front_image"`
+	MasterDistributorAadharBackImage   *string `json:"master_distributor_aadhar_back_image"`
+	MasterDistributorPanImage          *string `json:"master_distributor_pan_image"`
+	MasterDistributorPanWithAgentImage *string `json:"master_distributor_pan_with_agent_image"`
+	MasterDistributorSelfieImage       *string `json:"master_distributor_selfie_image"`
+	MasterDistributorSignatureImage    *string `json:"master_distributor_signature_image"`
+	MasterDistributorShopImage         *string `json:"master_distributor_shop_image"`
 	CreatedAT                      time.Time `json:"created_at"`
 	UpdatedAT                      time.Time `json:"updated_at"`
 }
