@@ -44,8 +44,8 @@ func main() {
 	select {
 	case err = <-serverErr:
 		if err != nil && err != http.ErrServerClosed {
-			app.Logger.Error("server")
-			os.Exit(0)
+			app.Logger.Error("server error", "error", err)
+			os.Exit(1)
 		}
 	case sig := <-quit:
 		app.Logger.Info("server shutting down", "signal", sig)
