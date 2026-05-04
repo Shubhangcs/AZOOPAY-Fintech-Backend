@@ -313,8 +313,9 @@ func (rs *PostgresRetailerStore) GetRetailersByMasterDistributorID(masterDistrib
 		re.retailer_city, re.retailer_state, re.retailer_address, re.retailer_pincode,
 		re.retailer_business_name, re.retailer_business_type, re.retailer_gst_number,
 		re.retailer_kyc_status, re.retailer_wallet_balance, re.hold_amount,
-		re.is_retailer_blocked, re.retailer_aadhar_image, re.retailer_pan_image,
-		re.retailer_image, re.created_at, re.updated_at
+		re.is_retailer_blocked, re.retailer_aadhar_front_image, re.retailer_aadhar_back_image,
+		re.retailer_pan_image, re.retailer_pan_with_agent_image, re.retailer_signature_image,
+		re.retailer_shop_image, re.retailer_selfie_image, re.created_at, re.updated_at
 	FROM retailers re
 	JOIN distributors d ON re.distributor_id = d.distributor_id
 	WHERE d.master_distributor_id = $1
@@ -335,8 +336,9 @@ func (rs *PostgresRetailerStore) GetRetailersByAdminID(adminID string, limit, of
 		re.retailer_city, re.retailer_state, re.retailer_address, re.retailer_pincode,
 		re.retailer_business_name, re.retailer_business_type, re.retailer_gst_number,
 		re.retailer_kyc_status, re.retailer_wallet_balance, re.hold_amount,
-		re.is_retailer_blocked, re.retailer_aadhar_image, re.retailer_pan_image,
-		re.retailer_image, re.created_at, re.updated_at
+		re.is_retailer_blocked, re.retailer_aadhar_front_image, re.retailer_aadhar_back_image,
+		re.retailer_pan_image, re.retailer_pan_with_agent_image, re.retailer_signature_image,
+		re.retailer_shop_image, re.retailer_selfie_image, re.created_at, re.updated_at
 	FROM retailers re
 	JOIN distributors d ON re.distributor_id = d.distributor_id
 	JOIN master_distributors md ON d.master_distributor_id = md.master_distributor_id
