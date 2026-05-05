@@ -10,6 +10,7 @@ type RevertTransactionModel struct {
 	RevertByID           string    `json:"revert_by_id"`
 	RevertOnID           string    `json:"revert_on_id"`
 	Amount               float64   `json:"amount"`
+	Mpin                 int       `json:"mpin,omitempty"`
 	RevertStatus         string    `json:"revert_status"`
 	Remarks              string    `json:"remarks"`
 	RevertByName         string    `json:"revert_by_name,omitempty"`

@@ -141,5 +141,6 @@ func isRevertClientErr(err error) bool {
 	return msg == "revert_on user not found" ||
 		msg == "revert_by user not found" ||
 		msg == "insufficient balance" ||
+		msg == "invalid mpin" ||
 		strings.HasPrefix(msg, "unknown user type for id:")
 }

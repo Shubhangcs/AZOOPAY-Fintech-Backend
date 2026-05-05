@@ -411,5 +411,6 @@ func isElectricityClientErr(err error) bool {
 		msg == "operator not found" ||
 		msg == "electricity bill not found or already finalized" ||
 		msg == "electricity bill not found or already refunded" ||
-		msg == "only FAILED electricity bills can be refunded"
+		msg == "only FAILED electricity bills can be refunded" ||
+		msg == "invalid mpin"
 }

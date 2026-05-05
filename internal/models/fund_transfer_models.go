@@ -12,6 +12,7 @@ type FundTransferModel struct {
 	Amount                     float64   `json:"amount"`
 	FundTransferStatus         string    `json:"fund_transfer_status"`
 	Remarks                    string    `json:"remarks"`
+	Mpin                       int       `json:"mpin,omitempty"`
 	BeforeBalance              float64   `json:"before_balance"`
 	AfterBalance               float64   `json:"after_balance"`
 	TransfererName             string    `json:"transferer_name,omitempty"`

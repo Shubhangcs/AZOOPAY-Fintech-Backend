@@ -35,6 +35,10 @@ type ElectricityBillStore interface {
 }
 
 func (es *PostgresElectricityBillStore) InitializeElectricityBill(eb *models.ElectricityBillModel) error {
+	if err := verifyMpin(es.db, eb.RetailerID, eb.Mpin); err != nil {
+		return err
+	}
+
 	rc, err := getRetailerDetails(es.db, eb.RetailerID)
 	if err != nil {
 		return err

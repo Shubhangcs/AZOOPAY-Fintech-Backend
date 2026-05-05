@@ -514,5 +514,6 @@ func isRechargeClientErr(err error) bool {
 		msg == "circle not found" ||
 		msg == "recharge not found or already finalized" ||
 		msg == "recharge not found or already refunded" ||
-		msg == "only FAILED recharges can be refunded"
+		msg == "only FAILED recharges can be refunded" ||
+		msg == "invalid mpin"
 }

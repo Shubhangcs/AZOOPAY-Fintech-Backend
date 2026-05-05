@@ -64,6 +64,10 @@ func (fs *PostgresFundTransferStore) DistributorToRetailer(ft *models.FundTransf
 }
 
 func (fs *PostgresFundTransferStore) transfer(ft *models.FundTransferModel) error {
+	if err := verifyMpin(fs.db, ft.FundTransfererID, ft.Mpin); err != nil {
+		return err
+	}
+
 	senderInfo, err := getUserTableInfo(ft.FundTransfererID)
 	if err != nil {
 		return err

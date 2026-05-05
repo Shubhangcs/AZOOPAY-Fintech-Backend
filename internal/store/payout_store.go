@@ -47,6 +47,10 @@ type retailerChain struct {
 }
 
 func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models.PayoutTransactionModel) error {
+	if err := verifyMpin(ps.db, pt.RetailerID, pt.Mpin); err != nil {
+		return err
+	}
+
 	rc, err := getRetailerDetails(ps.db, pt.RetailerID)
 	if err != nil {
 		return err

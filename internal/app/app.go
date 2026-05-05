@@ -33,6 +33,8 @@ type Application struct {
 	DTHRechargeHandler       *handlers.DTHRechargeHandler
 	ElectricityBillHandler   *handlers.ElectricityBillHandler
 	LoginActivityHandler     *handlers.LoginActivityHandler
+	StatsHandler             *handlers.StatsHandler
+	DashboardHandler         *handlers.DashboardHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -68,6 +70,8 @@ func NewApplication() (*Application, error) {
 	electricityBillStore := store.NewPostgresElectricityBillStore(pgdb, walletTransactionStore)
 	loginActivityStore := store.NewPostgresLoginActivityStore(pgdb)
 	apiDownStore := store.NewPostgresApiDownStore(pgdb)
+	statsStore := store.NewPostgresStatsStore(pgdb)
+	dashboardStore := store.NewPostgresDashboardStore(pgdb)
 
 	// Handlers
 	apiDownHandler := handlers.NewApiDownHandler(apiDownStore, logger)
@@ -89,6 +93,8 @@ func NewApplication() (*Application, error) {
 	dthRechargeHandler := handlers.NewDTHRechargeHandler(dthRechargeStore, apiDownStore, logger)
 	electricityBillHandler := handlers.NewElectricityBillHandler(electricityBillStore, apiDownStore, logger)
 	loginActivityHandler := handlers.NewLoginActivityHandler(loginActivityStore, logger)
+	statsHandler := handlers.NewStatsHandler(statsStore, logger)
+	dashboardHandler := handlers.NewDashboardHandler(dashboardStore, logger)
 
 	return &Application{
 		Logger:                   logger,
@@ -112,6 +118,8 @@ func NewApplication() (*Application, error) {
 		DTHRechargeHandler:       dthRechargeHandler,
 		ElectricityBillHandler:   electricityBillHandler,
 		LoginActivityHandler:     loginActivityHandler,
+		StatsHandler:             statsHandler,
+		DashboardHandler:         dashboardHandler,
 	}, nil
 
 }

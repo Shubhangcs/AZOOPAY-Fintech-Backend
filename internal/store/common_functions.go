@@ -13,6 +13,7 @@ type userTableInfo struct {
 	IDColumnName            string
 	WalletBalanceColumnName string
 	HoldAmountColumnName    string
+	MpinColumnName          string
 }
 
 type transaction struct {
@@ -32,11 +33,11 @@ func getUserTableInfo(id string) (*userTableInfo, error) {
 	case "A":
 		return &userTableInfo{TableName: "admins", IDColumnName: "admin_id", WalletBalanceColumnName: "admin_wallet_balance"}, nil
 	case "M":
-		return &userTableInfo{TableName: "master_distributors", IDColumnName: "master_distributor_id", WalletBalanceColumnName: "master_distributor_wallet_balance", HoldAmountColumnName: "hold_amount"}, nil
+		return &userTableInfo{TableName: "master_distributors", IDColumnName: "master_distributor_id", WalletBalanceColumnName: "master_distributor_wallet_balance", HoldAmountColumnName: "hold_amount", MpinColumnName: "master_distributor_mpin"}, nil
 	case "D":
-		return &userTableInfo{TableName: "distributors", IDColumnName: "distributor_id", WalletBalanceColumnName: "distributor_wallet_balance", HoldAmountColumnName: "hold_amount"}, nil
+		return &userTableInfo{TableName: "distributors", IDColumnName: "distributor_id", WalletBalanceColumnName: "distributor_wallet_balance", HoldAmountColumnName: "hold_amount", MpinColumnName: "distributor_mpin"}, nil
 	case "R":
-		return &userTableInfo{TableName: "retailers", IDColumnName: "retailer_id", WalletBalanceColumnName: "retailer_wallet_balance", HoldAmountColumnName: "hold_amount"}, nil
+		return &userTableInfo{TableName: "retailers", IDColumnName: "retailer_id", WalletBalanceColumnName: "retailer_wallet_balance", HoldAmountColumnName: "hold_amount", MpinColumnName: "retailer_mpin"}, nil
 	default:
 		return nil, errors.New("invalid user id")
 	}
@@ -132,6 +133,26 @@ func creditTx(tx *sql.Tx, txn transaction, wts WalletTransactionStore) error {
 		BeforeBalance: before, AfterBalance: after, TransactionReason: txn.Reason, Remarks: txn.Remarks,
 	})
 	return err
+}
+
+func verifyMpin(db *sql.DB, userID string, mpin int) error {
+	info, err := getUserTableInfo(userID)
+	if err != nil {
+		return err
+	}
+	if info.MpinColumnName == "" {
+		return nil
+	}
+	q := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE %s = $1 AND %s = $2)`,
+		info.TableName, info.IDColumnName, info.MpinColumnName)
+	var valid bool
+	if err := db.QueryRow(q, userID, mpin).Scan(&valid); err != nil {
+		return err
+	}
+	if !valid {
+		return errors.New("invalid mpin")
+	}
+	return nil
 }
 
 func checkExistsTx(tx *sql.Tx, table, idCol, id, role string) error {

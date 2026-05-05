@@ -34,6 +34,8 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	electricityBillRoutes(router, app)
 	loginActivityRoutes(router, app)
 	apiDownRoutes(router, app)
+	statsRoutes(router, app)
+	dashboardRoutes(router, app)
 
 	return router
 }
@@ -371,6 +373,24 @@ func mobileRechargeRoutes(router *chi.Mux, app *app.Application) {
 		r.Put("/operators/{id}", app.MobileRechargeHandler.HandleUpdateMobileRechargeOperator)
 		r.Delete("/operators/{id}", app.MobileRechargeHandler.HandleDeleteMobileRechargeOperator)
 		r.Get("/operators", app.MobileRechargeHandler.HandleGetMobileRechargeOperators)
+	})
+}
+
+func dashboardRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/dashboard", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
+		r.Get("/retailer/{id}", app.DashboardHandler.HandleGetRetailerDashboard)
+	})
+}
+
+func statsRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/stats", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
+		r.Get("/retailer/{id}", app.StatsHandler.HandleGetRetailerStats)
+		r.Get("/distributor/{id}", app.StatsHandler.HandleGetDistributorStats)
+		r.Get("/md/{id}", app.StatsHandler.HandleGetMasterDistributorStats)
 	})
 }
 

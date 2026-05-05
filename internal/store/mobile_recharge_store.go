@@ -41,6 +41,10 @@ type MobileRechargeStore interface {
 }
 
 func (ms *PostgresMobileRechargeStore) InitializeMobileRecharge(mr *models.MobileRechargeModel) error {
+	if err := verifyMpin(ms.db, mr.RetailerID, mr.Mpin); err != nil {
+		return err
+	}
+
 	rc, err := getRetailerDetails(ms.db, mr.RetailerID)
 	if err != nil {
 		return err

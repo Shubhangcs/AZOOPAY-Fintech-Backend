@@ -37,6 +37,10 @@ type DTHRechargeStore interface {
 }
 
 func (ds *PostgresDTHRechargeStore) InitializeDTHRecharge(dr *models.DTHRechargeModel) error {
+	if err := verifyMpin(ds.db, dr.RetailerID, dr.Mpin); err != nil {
+		return err
+	}
+
 	rc, err := getRetailerDetails(ds.db, dr.RetailerID)
 	if err != nil {
 		return err

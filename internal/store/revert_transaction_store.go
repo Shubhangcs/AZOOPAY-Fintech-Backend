@@ -27,6 +27,10 @@ type RevertTransactionStore interface {
 
 // Create Revert Transaction
 func (rs *PostgresRevertTransactionStore) CreateRevertTransaction(rt *models.RevertTransactionModel) error {
+	if err := verifyMpin(rs.db, rt.RevertByID, rt.Mpin); err != nil {
+		return err
+	}
+
 	tx, err := rs.db.Begin()
 	if err != nil {
 		return err

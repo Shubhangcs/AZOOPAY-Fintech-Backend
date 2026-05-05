@@ -16,6 +16,7 @@ type DTHRechargeModel struct {
 	Commision             float64   `json:"commision"`
 	OperatorTransactionID *string   `json:"operator_transaction_id"`
 	OrderID               *string   `json:"order_id"`
+	Mpin                  int       `json:"mpin,omitempty"`
 	Status                string    `json:"status"`
 	CreatedAt             time.Time `json:"created_at"`
 	RetailerName          string    `json:"retailer_name,omitempty"`

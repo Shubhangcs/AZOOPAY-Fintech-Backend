@@ -370,5 +370,6 @@ func isDTHClientErr(err error) bool {
 		msg == "operator not found" ||
 		msg == "dth recharge not found or already finalized" ||
 		msg == "dth recharge not found or already refunded" ||
-		msg == "only FAILED recharges can be refunded"
+		msg == "only FAILED recharges can be refunded" ||
+		msg == "invalid mpin"
 }

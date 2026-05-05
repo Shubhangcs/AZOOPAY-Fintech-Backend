@@ -340,5 +340,6 @@ func isPayoutClientErr(err error) bool {
 		msg == "payout transaction not found or already refunded" ||
 		msg == "only FAILED payout transactions can be refunded" ||
 		msg == "invalid payout_transaction_status" ||
-		msg == "minimum transaction amount is 1000"
+		msg == "minimum transaction amount is 1000" ||
+		msg == "invalid mpin"
 }
