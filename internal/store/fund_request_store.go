@@ -30,6 +30,10 @@ type FundRequestStore interface {
 
 // Create Fund Request
 func (fs *PostgresFundRequestStore) CreateFundRequest(fr *models.FundRequestModel) error {
+	if err := verifyKYC(fs.db, fr.RequesterID); err != nil {
+		return err
+	}
+
 	const q = `
 	INSERT INTO fund_requests (
 		requester_id, request_to_id, amount, bank_name,

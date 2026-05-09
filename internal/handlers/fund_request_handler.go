@@ -259,5 +259,6 @@ func isFundRequestClientErr(err error) bool {
 		msg == "insufficient balance" ||
 		msg == "requester not found" ||
 		msg == "request_to user not found" ||
+		msg == "KYC is not verified" ||
 		strings.HasPrefix(msg, "fund request is already ")
 }

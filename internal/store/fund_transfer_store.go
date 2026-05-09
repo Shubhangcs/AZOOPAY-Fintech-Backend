@@ -67,6 +67,9 @@ func (fs *PostgresFundTransferStore) transfer(ft *models.FundTransferModel) erro
 	if err := verifyMpin(fs.db, ft.FundTransfererID, ft.Mpin); err != nil {
 		return err
 	}
+	if err := verifyKYC(fs.db, ft.FundTransfererID); err != nil {
+		return err
+	}
 
 	senderInfo, err := getUserTableInfo(ft.FundTransfererID)
 	if err != nil {

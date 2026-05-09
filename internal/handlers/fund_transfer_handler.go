@@ -139,5 +139,5 @@ func (fh *FundTransferHandler) HandleGetAllFundTransfers(w http.ResponseWriter, 
 
 func isClientErr(err error) bool {
 	msg := err.Error()
-	return msg == "insufficient balance" || msg == "sender not found" || msg == "receiver not found" || msg == "invalid mpin"
+	return msg == "insufficient balance" || msg == "sender not found" || msg == "receiver not found" || msg == "invalid mpin" || msg == "KYC is not verified"
 }
