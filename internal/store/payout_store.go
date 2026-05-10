@@ -125,10 +125,7 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 	}
 
 	refID := pt.PayoutTransactionID
-	payoutRemarks := pt.Remarks
-	if payoutRemarks == "" {
-		payoutRemarks = fmt.Sprintf("Payout on %s | Account: %s | Amount: %.2f", pt.BeneficiaryName, pt.AccountNumber, pt.Amount)
-	}
+	payoutRemarks := fmt.Sprintf("Payout on %s | Account: %s | Amount: %.2f", pt.BeneficiaryName, pt.AccountNumber, pt.Amount)
 	commisionRemarks := fmt.Sprintf("Payout commission  | Amount: %.2f | Ref: %s", pt.Amount, refID)
 
 	retailerInfo, err := getUserTableInfo(pt.RetailerID)

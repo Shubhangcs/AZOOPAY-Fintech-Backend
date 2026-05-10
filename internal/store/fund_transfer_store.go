@@ -93,11 +93,12 @@ func (fs *PostgresFundTransferStore) transfer(ft *models.FundTransferModel) erro
 	}
 
 	refID := fmt.Sprintf("%d", ft.FundTransferID)
+	walletRemarks := fmt.Sprintf("Fund transfer from %s to %s", ft.FundTransfererID, ft.FundReceiverID)
 
 	// 2. Debit sender — atomically checks balance, also creates wallet transaction entry
 	if err = debitTx(tx, transaction{
 		UserID: ft.FundTransfererID, ReferenceID: refID,
-		Amount: ft.Amount, Reason: "FUND_TRANSFER", Remarks: ft.Remarks,
+		Amount: ft.Amount, Reason: "FUND_TRANSFER", Remarks: walletRemarks,
 		userTableInfo: *senderInfo,
 	}, fs.walletStore); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -109,7 +110,7 @@ func (fs *PostgresFundTransferStore) transfer(ft *models.FundTransferModel) erro
 	// 3. Credit receiver — also creates wallet transaction entry
 	if err = creditTx(tx, transaction{
 		UserID: ft.FundReceiverID, ReferenceID: refID,
-		Amount: ft.Amount, Reason: "FUND_TRANSFER", Remarks: ft.Remarks,
+		Amount: ft.Amount, Reason: "FUND_TRANSFER", Remarks: walletRemarks,
 		userTableInfo: *receiverInfo,
 	}, fs.walletStore); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
