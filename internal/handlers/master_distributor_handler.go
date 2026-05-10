@@ -274,7 +274,7 @@ func (mh *MasterDistributorHandler) HandleMasterDistributorLogin(w http.Response
 		return
 	}
 
-	token, err := utils.GenerateToken(req.MasterDistributorID, req.MasterDistributorName)
+	token, err := utils.GenerateToken(req.MasterDistributorID, req.MasterDistributorName, req.AdminID)
 	if err != nil {
 		utils.ServerError(w, mh.logger, "master distributor login", err)
 		return

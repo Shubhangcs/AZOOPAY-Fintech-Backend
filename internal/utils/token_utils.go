@@ -11,6 +11,7 @@ import (
 type TokenClaims struct {
 	UserID   string `json:"user_id"`
 	UserName string `json:"user_name"`
+	AdminID  string `json:"admin_id"`
 	jwt.RegisteredClaims
 }
 
@@ -20,10 +21,11 @@ var (
 	tokenIssuer = os.Getenv("JWT_TOKEN_ISSUER")
 )
 
-func GenerateToken(userID, userName string) (string, error) {
+func GenerateToken(userID, userName, adminID string) (string, error) {
 	claims := TokenClaims{
 		UserID:   userID,
 		UserName: userName,
+		AdminID:  adminID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

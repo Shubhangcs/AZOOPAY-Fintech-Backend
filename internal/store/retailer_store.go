@@ -354,17 +354,21 @@ func (rs *PostgresRetailerStore) GetRetailersByAdminID(adminID string, limit, of
 func (rs *PostgresRetailerStore) GetRetailerDetailsForLogin(re *models.RetailerModel) error {
 	query := `
 	SELECT
-		retailer_id,
-		retailer_name
-	FROM retailers
-	WHERE retailer_phone = $1
-	AND retailer_password = $2
-	AND is_retailer_blocked = FALSE;
+		r.retailer_id,
+		r.retailer_name,
+		md.admin_id
+	FROM retailers r
+	JOIN distributors d ON r.distributor_id = d.distributor_id
+	JOIN master_distributors md ON d.master_distributor_id = md.master_distributor_id
+	WHERE r.retailer_phone = $1
+	AND r.retailer_password = $2
+	AND r.is_retailer_blocked = FALSE;
 	`
 
 	err := rs.db.QueryRow(query, re.RetailerPhone, re.RetailerPassword).Scan(
 		&re.RetailerID,
 		&re.RetailerName,
+		&re.AdminID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return errors.New("invalid credentials")

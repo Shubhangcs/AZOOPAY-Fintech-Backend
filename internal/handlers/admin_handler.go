@@ -262,7 +262,7 @@ func (ah *AdminHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	token, err := utils.GenerateToken(req.AdminID, req.AdminName)
+	token, err := utils.GenerateToken(req.AdminID, req.AdminName, "")
 	if err != nil {
 		utils.ServerError(w, ah.logger, "admin login", err)
 		return

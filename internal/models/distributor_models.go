@@ -10,6 +10,7 @@ import (
 type DistributorModel struct {
 	DistributorID                string    `json:"distributor_id"`
 	MasterDistributorID          string    `json:"master_distributor_id"`
+	AdminID                      string    `json:"admin_id,omitempty"`
 	DistributorName              string    `json:"distributor_name"`
 	DistributorPhone             string    `json:"distributor_phone"`
 	DistributorEmail             string    `json:"distributor_email"`

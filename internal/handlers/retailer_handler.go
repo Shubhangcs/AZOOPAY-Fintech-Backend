@@ -295,7 +295,7 @@ func (rh *RetailerHandler) HandleRetailerLogin(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	token, err := utils.GenerateToken(req.RetailerID, req.RetailerName)
+	token, err := utils.GenerateToken(req.RetailerID, req.RetailerName, req.AdminID)
 	if err != nil {
 		utils.ServerError(w, rh.logger, "retailer login", err)
 		return

@@ -10,6 +10,7 @@ import (
 type RetailerModel struct {
 	RetailerID            string    `json:"retailer_id"`
 	DistributorID         string    `json:"distributor_id"`
+	AdminID               string    `json:"admin_id,omitempty"`
 	RetailerName          string    `json:"retailer_name"`
 	RetailerPhone         string    `json:"retailer_phone"`
 	RetailerEmail         string    `json:"retailer_email"`

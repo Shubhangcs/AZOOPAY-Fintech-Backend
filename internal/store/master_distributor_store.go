@@ -387,7 +387,8 @@ func (ms *PostgresMasterDistributorStore) GetMasterDistributorDetailsForLogin(md
 	query := `
 	SELECT
 		master_distributor_id,
-		master_distributor_name
+		master_distributor_name,
+		admin_id
 	FROM master_distributors
 	WHERE master_distributor_phone = $1
 	AND master_distributor_password = $2
@@ -397,6 +398,7 @@ func (ms *PostgresMasterDistributorStore) GetMasterDistributorDetailsForLogin(md
 	err := ms.db.QueryRow(query, md.MasterDistributorPhone, md.MasterDistributorPassword).Scan(
 		&md.MasterDistributorID,
 		&md.MasterDistributorName,
+		&md.AdminID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return errors.New("invalid credentials")

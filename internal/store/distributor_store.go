@@ -395,17 +395,20 @@ func (ds *PostgresDistributorStore) GetDistributorsByAdminIDForDropdown(adminID 
 func (ds *PostgresDistributorStore) GetDistributorDetailsForLogin(d *models.DistributorModel) error {
 	query := `
 	SELECT
-		distributor_id,
-		distributor_name
-	FROM distributors
-	WHERE distributor_phone = $1
-	AND distributor_password = $2
-	AND is_distributor_blocked = FALSE;
+		dist.distributor_id,
+		dist.distributor_name,
+		md.admin_id
+	FROM distributors dist
+	JOIN master_distributors md ON dist.master_distributor_id = md.master_distributor_id
+	WHERE dist.distributor_phone = $1
+	AND dist.distributor_password = $2
+	AND dist.is_distributor_blocked = FALSE;
 	`
 
 	err := ds.db.QueryRow(query, d.DistributorPhone, d.DistributorPassword).Scan(
 		&d.DistributorID,
 		&d.DistributorName,
+		&d.AdminID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return errors.New("invalid credentials")

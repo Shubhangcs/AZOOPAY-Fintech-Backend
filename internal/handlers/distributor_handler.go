@@ -310,7 +310,7 @@ func (dh *DistributorHandler) HandleDistributorLogin(w http.ResponseWriter, r *h
 		return
 	}
 
-	token, err := utils.GenerateToken(req.DistributorID, req.DistributorName)
+	token, err := utils.GenerateToken(req.DistributorID, req.DistributorName, req.AdminID)
 	if err != nil {
 		utils.ServerError(w, dh.logger, "distributor login", err)
 		return
