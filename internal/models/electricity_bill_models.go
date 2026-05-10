@@ -18,6 +18,7 @@ type ElectricityBillModel struct {
 	CustomerEmail                string    `json:"customer_email"`
 	Commision                    float64   `json:"commision"`
 	Mpin                         int       `json:"mpin,omitempty"`
+	Remarks                      string    `json:"remarks,omitempty"`
 	TransactionStatus            string    `json:"transaction_status"`
 	CreatedAt                    time.Time `json:"created_at"`
 	RetailerName                 string    `json:"retailer_name,omitempty"`

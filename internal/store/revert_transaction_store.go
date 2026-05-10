@@ -59,7 +59,10 @@ func (rs *PostgresRevertTransactionStore) CreateRevertTransaction(rt *models.Rev
 	}
 
 	refID := fmt.Sprintf("%d", rt.RevertTransactionID)
-	remarks := fmt.Sprintf("Revert transaction: %s", rt.Remarks)
+	remarks := rt.Remarks
+	if remarks == "" {
+		remarks = "Revert transaction"
+	}
 
 	// Debit revert_on — atomically checks balance, also creates wallet transaction entry
 	if err = debitTx(tx, transaction{

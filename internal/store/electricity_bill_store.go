@@ -80,7 +80,10 @@ func (es *PostgresElectricityBillStore) InitializeElectricityBill(eb *models.Ele
 	}
 
 	refID := fmt.Sprintf("%d", eb.ElectricityBillTransactionID)
-	billRemarks := fmt.Sprintf("Electricity bill payment | %s", eb.CustomerID)
+	billRemarks := eb.Remarks
+	if billRemarks == "" {
+		billRemarks = fmt.Sprintf("Electricity bill payment | %s", eb.CustomerID)
+	}
 
 	retailerInfo, err := getUserTableInfo(eb.RetailerID)
 	if err != nil {

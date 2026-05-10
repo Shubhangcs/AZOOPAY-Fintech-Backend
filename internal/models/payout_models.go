@@ -35,6 +35,7 @@ type PayoutTransactionModel struct {
 	DistributorCommision       float64   `json:"distributor_commision"`
 	RetailerCommision          float64   `json:"retailer_commision"`
 	Mpin                       int       `json:"mpin,omitempty"`
+	Remarks                    string    `json:"remarks,omitempty"`
 	PayoutTransactionStatus    string    `json:"payout_transaction_status"`
 	RetailerName               string    `json:"retailer_name,omitempty"`
 	RetailerBusinessName       *string   `json:"retailer_business_name,omitempty"`

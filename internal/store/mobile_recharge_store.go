@@ -98,7 +98,10 @@ func (ms *PostgresMobileRechargeStore) InitializeMobileRecharge(mr *models.Mobil
 	}
 
 	refID := fmt.Sprintf("%d", mr.MobileRechargeTransactionID)
-	rechargeRemarks := fmt.Sprintf("Mobile recharge | %s", mr.MobileNumber)
+	rechargeRemarks := mr.Remarks
+	if rechargeRemarks == "" {
+		rechargeRemarks = fmt.Sprintf("Mobile recharge | %s", mr.MobileNumber)
+	}
 
 	retailerInfo, err := getUserTableInfo(mr.RetailerID)
 	if err != nil {

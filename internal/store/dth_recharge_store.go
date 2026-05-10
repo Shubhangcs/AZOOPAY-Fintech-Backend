@@ -87,7 +87,10 @@ func (ds *PostgresDTHRechargeStore) InitializeDTHRecharge(dr *models.DTHRecharge
 	}
 
 	refID := fmt.Sprintf("%d", dr.DTHTransactionID)
-	rechargeRemarks := fmt.Sprintf("DTH recharge | %s", dr.CustomerID)
+	rechargeRemarks := dr.Remarks
+	if rechargeRemarks == "" {
+		rechargeRemarks = fmt.Sprintf("DTH recharge | %s", dr.CustomerID)
+	}
 
 	retailerInfo, err := getUserTableInfo(dr.RetailerID)
 	if err != nil {
