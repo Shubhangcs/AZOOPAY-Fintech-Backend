@@ -94,6 +94,9 @@ func (fs *PostgresFundTransferStore) transfer(ft *models.FundTransferModel) erro
 
 	refID := fmt.Sprintf("%d", ft.FundTransferID)
 	walletRemarks := fmt.Sprintf("Fund transfer from %s to %s", ft.FundTransfererID, ft.FundReceiverID)
+	if ft.Remarks != "" {
+		walletRemarks += " | " + ft.Remarks
+	}
 
 	// 2. Debit sender — atomically checks balance, also creates wallet transaction entry
 	if err = debitTx(tx, transaction{

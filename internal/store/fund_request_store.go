@@ -84,6 +84,9 @@ func (fs *PostgresFundRequestStore) ApproveFundRequest(fundRequestID int64) erro
 
 	refID := fmt.Sprintf("%d", fundRequestID)
 	remarks := fmt.Sprintf("Fund request from %s to %s", fr.RequesterID, fr.RequestToID)
+	if fr.Remarks != "" {
+		remarks += " | " + fr.Remarks
+	}
 
 	// Debit request_to — atomically checks balance, also creates wallet transaction entry
 	if err = debitTx(tx, transaction{
