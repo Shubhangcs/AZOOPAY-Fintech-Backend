@@ -130,6 +130,8 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		return
 	}
 
+	bh.logger.Info("bene data", apiResp.Data)
+
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": apiResp.Data})
 }
 
