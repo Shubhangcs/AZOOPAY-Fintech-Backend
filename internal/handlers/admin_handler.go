@@ -316,7 +316,7 @@ func (ah *AdminHandler) HandleGetRechargeKitRechargeBalance(w http.ResponseWrite
 	}
 	var resp models.RechargeKitWalletBalanceResponseModel
 	if err := utils.GetRequest(
-		utils.RechargeKitAPI2+utils.BalanceCheck,
+		utils.RechargeKitAPI1+utils.BalanceCheck,
 		"Authorization", "Bearer "+utils.RechargeKitAPIToken,
 		&resp,
 	); err != nil {
