@@ -15,7 +15,8 @@ type APIResponseModel struct {
 }
 
 type RechargeKitWalletBalanceResponseModel struct {
-	Error   int     `json:"error"`
-	Message string  `json:"msg"`
-	Balance float64 `json:"balance"`
+	Error    int     `json:"error"`
+	Message  string  `json:"msg"`
+	Balance  float64 `json:"wallet_amount"`
+	Balance2 float32 `json:"dmr_wallet_amount"`
 }
