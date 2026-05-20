@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	PennyDrop              = "/validation/verifyBankRequest"
+	PennyDrop              = "/validation/penny-drop"
 	Payout                 = "/rkitpayout/payoutTransfer"
 	PayoutStatus           = "/recharge/statusCheck"
 	MobileRecharge         = "/recharge/prepaid"

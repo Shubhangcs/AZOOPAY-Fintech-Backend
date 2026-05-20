@@ -118,6 +118,8 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 	err := utils.PostRequest(utils.RechargeKitVerifyAPI+utils.PennyDrop, "Token", utils.RechargeKitAPIToken, map[string]any{
 		"partner_request_id": partnerRequestID,
 		"bank_account":       req.AccountNumber,
+		"payment_mode":       1,
+		"beneficiary_name":   "",
 		"ifsc_code":          req.IFSCCode,
 	}, &apiResp)
 	if err != nil {
