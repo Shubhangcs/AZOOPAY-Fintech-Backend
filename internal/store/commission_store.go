@@ -179,7 +179,7 @@ func (cs *PostgresCommisionStore) GetCommisionByUserIDServiceAndAmount(userID, s
 
 // Get Default Commision
 func (cs *PostgresCommisionStore) GetDefaultCommision(amount float64) *models.CommisionModel {
-	var totalCommision = (1.2 / 100) * amount
+	var totalCommision = (1.0 / 100) * amount
 	return &models.CommisionModel{
 		TotalCommision:             totalCommision,
 		AdminCommision:             totalCommision * 0.25,
