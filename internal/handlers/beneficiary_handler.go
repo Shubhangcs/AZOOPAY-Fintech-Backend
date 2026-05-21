@@ -117,7 +117,7 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 	}
 
 	var apiResp models.VerifyBeneficiaryResponse
-	err := utils.PostRequest(utils.RechargeKitVerifyAPI+utils.PennyDrop, "Authorization", utils.RechargeKitAPIToken, map[string]any{
+	err := utils.PostRequest(utils.RechargeKitVerifyAPI+utils.PennyDrop, "Authorization", "Bearer "+utils.RechargeKitAPIToken, map[string]any{
 		"partner_request_id": partnerRequestID,
 		"bank_account":       req.AccountNumber,
 		"payment_mode":       1,
