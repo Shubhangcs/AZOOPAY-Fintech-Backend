@@ -157,7 +157,7 @@ func (bs *PostgresBeneficiaryStore) ChargeForVerification(adminID, userID, refer
 		ReferenceID:   referenceID,
 		Amount:        3.0,
 		Reason:        "BENE_VERIFICATION",
-		Remarks:       "Beneficiary verification charge",
+		Remarks:       "Beneficiary verification charge on: " + userID,
 		userTableInfo: *adminInfo,
 	}, bs.walletStore); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
