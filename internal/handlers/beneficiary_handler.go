@@ -107,10 +107,11 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 
 	claims := r.Context().Value("claims").(*utils.TokenClaims)
 	retailerID := claims.UserID
+	adminID := claims.AdminID
 
 	partnerRequestID := uuid.NewString()
 
-	if err := bh.beneficiaryStore.ChargeForVerification(retailerID, partnerRequestID); err != nil {
+	if err := bh.beneficiaryStore.ChargeForVerification(adminID, retailerID, partnerRequestID); err != nil {
 		utils.BadRequest(w, bh.logger, "verify beneficiary: wallet debit", err)
 		return
 	}
@@ -133,7 +134,6 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		return
 	}
 
-	
 	log.Println(apiResp)
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": apiResp.Data})

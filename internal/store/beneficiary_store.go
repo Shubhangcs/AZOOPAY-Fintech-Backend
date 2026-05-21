@@ -24,7 +24,7 @@ type BeneficiaryStore interface {
 	GetBeneficiaries(mobileNumber string, p utils.PaginationParams) ([]models.BeneficiaryModel, error)
 	GetBeneficiaryByAccountNumber(accountNumber string) (*models.BeneficiaryModel, error)
 	VerifyBeneficiary(beneficiaryID string) error
-	ChargeForVerification(userID, referenceID string) error
+	ChargeForVerification(adminID, userID, referenceID string) error
 }
 
 // Create Beneficiary
@@ -121,11 +121,17 @@ func (bs *PostgresBeneficiaryStore) GetBeneficiaries(mobileNumber string, p util
 }
 
 // Charge For Verification
-func (bs *PostgresBeneficiaryStore) ChargeForVerification(userID, referenceID string) error {
+func (bs *PostgresBeneficiaryStore) ChargeForVerification(adminID, userID, referenceID string) error {
 	info, err := getUserTableInfo(userID)
 	if err != nil {
 		return err
 	}
+
+	adminInfo, err := getUserTableInfo(adminID)
+	if err != nil {
+		return err
+	}
+
 	tx, err := bs.db.Begin()
 	if err != nil {
 		return err
@@ -145,6 +151,21 @@ func (bs *PostgresBeneficiaryStore) ChargeForVerification(userID, referenceID st
 		}
 		return err
 	}
+
+	if err := creditTx(tx, transaction{
+		UserID:        adminID,
+		ReferenceID:   referenceID,
+		Amount:        3.0,
+		Reason:        "BENE_VERIFICATION",
+		Remarks:       "Beneficiary verification charge",
+		userTableInfo: *adminInfo,
+	}, bs.walletStore); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return checkExistsTx(tx, info.TableName, info.IDColumnName, adminID, "admin")
+		}
+		return err
+	}
+
 	return tx.Commit()
 }
 
