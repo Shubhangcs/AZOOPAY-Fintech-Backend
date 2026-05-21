@@ -196,6 +196,33 @@ func (rh *RetailerHandler) HandleUpdateRetailerBlockStatus(w http.ResponseWriter
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer block status updated successfully"})
 }
 
+// Update Retailer Payout Block Status Handler
+func (rh *RetailerHandler) HandleUpdateRetailerPayoutBlockStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, "update retailer payout block status", err)
+		return
+	}
+
+	var req models.RetailerModel
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, rh.logger, "update retailer payout block status", err)
+		return
+	}
+
+	req.RetailerID = id
+	if err := rh.retailerStore.UpdateRetailerPayoutBlockStatus(&req); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.BadRequest(w, rh.logger, "update retailer payout block status", errors.New("retailer not found"))
+			return
+		}
+		utils.ServerError(w, rh.logger, "update retailer payout block status", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer payout block status updated successfully"})
+}
+
 // Get Retailer By ID Handler
 func (rh *RetailerHandler) HandleGetRetailerByID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ReadParamID(r)

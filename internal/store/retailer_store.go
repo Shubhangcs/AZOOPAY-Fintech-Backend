@@ -22,6 +22,7 @@ type RetailerStore interface {
 	UpdateRetailerMpin(re *models.RetailerModel) error
 	UpdateRetailerKYCStatus(re *models.RetailerModel) error
 	UpdateRetailerBlockStatus(re *models.RetailerModel) error
+	UpdateRetailerPayoutBlockStatus(re *models.RetailerModel) error
 	GetRetailerByID(id string) (*models.RetailerModel, error)
 	GetRetailersByDistributorID(distributorID string, limit, offset int) ([]models.RetailerModel, error)
 	GetRetailersByMasterDistributorID(masterDistributorID string, limit, offset int) ([]models.RetailerModel, error)
@@ -204,6 +205,22 @@ func (rs *PostgresRetailerStore) UpdateRetailerBlockStatus(re *models.RetailerMo
 	return checkRowsAffected(res)
 }
 
+// Update Retailer Payout Block Status
+func (rs *PostgresRetailerStore) UpdateRetailerPayoutBlockStatus(re *models.RetailerModel) error {
+	query := `
+		UPDATE retailers
+		SET is_payout_blocked = $1,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE retailer_id = $2;
+	`
+	res, err := rs.db.Exec(query, re.IsPayoutBlocked, re.RetailerID)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
 // Get Retailer By ID
 func (rs *PostgresRetailerStore) GetRetailerByID(id string) (*models.RetailerModel, error) {
 	query := `
@@ -230,6 +247,7 @@ func (rs *PostgresRetailerStore) GetRetailerByID(id string) (*models.RetailerMod
 		retailer_wallet_balance,
 		hold_amount,
 		is_retailer_blocked,
+		is_payout_blocked,
 		retailer_aadhar_front_image,
 		retailer_aadhar_back_image,
 		retailer_pan_image,
@@ -267,6 +285,7 @@ func (rs *PostgresRetailerStore) GetRetailerByID(id string) (*models.RetailerMod
 		&re.RetailerWalletBalance,
 		&re.HoldAmount,
 		&re.IsRetailerBlocked,
+		&re.IsPayoutBlocked,
 		&re.RetailerAadharFrontImage,
 		&re.RetailerAadharBackImage,
 		&re.RetailerPanImage,
@@ -291,7 +310,7 @@ func (rs *PostgresRetailerStore) GetRetailersByDistributorID(distributorID strin
 		retailer_city, retailer_state, retailer_address, retailer_pincode,
 		retailer_business_name, retailer_business_type, retailer_gst_number,
 		retailer_kyc_status, retailer_wallet_balance, hold_amount,
-		is_retailer_blocked, retailer_aadhar_front_image, retailer_aadhar_back_image,
+		is_retailer_blocked, is_payout_blocked, retailer_aadhar_front_image, retailer_aadhar_back_image,
 		retailer_pan_image, retailer_pan_with_agent_image, retailer_signature_image,
 		retailer_shop_image, retailer_selfie_image, created_at, updated_at
 	FROM retailers
@@ -313,7 +332,7 @@ func (rs *PostgresRetailerStore) GetRetailersByMasterDistributorID(masterDistrib
 		re.retailer_city, re.retailer_state, re.retailer_address, re.retailer_pincode,
 		re.retailer_business_name, re.retailer_business_type, re.retailer_gst_number,
 		re.retailer_kyc_status, re.retailer_wallet_balance, re.hold_amount,
-		re.is_retailer_blocked, re.retailer_aadhar_front_image, re.retailer_aadhar_back_image,
+		re.is_retailer_blocked, re.is_payout_blocked, re.retailer_aadhar_front_image, re.retailer_aadhar_back_image,
 		re.retailer_pan_image, re.retailer_pan_with_agent_image, re.retailer_signature_image,
 		re.retailer_shop_image, re.retailer_selfie_image, re.created_at, re.updated_at
 	FROM retailers re
@@ -336,7 +355,7 @@ func (rs *PostgresRetailerStore) GetRetailersByAdminID(adminID string, limit, of
 		re.retailer_city, re.retailer_state, re.retailer_address, re.retailer_pincode,
 		re.retailer_business_name, re.retailer_business_type, re.retailer_gst_number,
 		re.retailer_kyc_status, re.retailer_wallet_balance, re.hold_amount,
-		re.is_retailer_blocked, re.retailer_aadhar_front_image, re.retailer_aadhar_back_image,
+		re.is_retailer_blocked, re.is_payout_blocked, re.retailer_aadhar_front_image, re.retailer_aadhar_back_image,
 		re.retailer_pan_image, re.retailer_pan_with_agent_image, re.retailer_signature_image,
 		re.retailer_shop_image, re.retailer_selfie_image, re.created_at, re.updated_at
 	FROM retailers re
@@ -464,6 +483,7 @@ func scanRetailers(db *sql.DB, query string, args ...any) ([]models.RetailerMode
 			&re.RetailerWalletBalance,
 			&re.HoldAmount,
 			&re.IsRetailerBlocked,
+			&re.IsPayoutBlocked,
 			&re.RetailerAadharFrontImage,
 			&re.RetailerAadharBackImage,
 			&re.RetailerPanImage,

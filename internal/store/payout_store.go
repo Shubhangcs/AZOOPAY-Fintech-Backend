@@ -43,6 +43,7 @@ type retailerChain struct {
 	adminID       string
 	kyc           bool
 	blocked       bool
+	payoutBlocked bool
 	balance       float64
 }
 
@@ -61,6 +62,10 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 	}
 	if rc.blocked {
 		return errors.New("retailer is blocked")
+	}
+
+	if rc.payoutBlocked {
+		return errors.New("retailer payout is blocked")
 	}
 
 	commision := ps.resolveCommision(pt.RetailerID, rc.distributorID, rc.mdID, rc.adminID, "PAYOUT", pt.Amount)

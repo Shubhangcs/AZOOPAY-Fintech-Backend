@@ -111,6 +111,7 @@ func retailerRoutes(router *chi.Mux, app *app.Application) {
 		r.Patch("/update/{id}/mpin", app.RetailerHandler.HandleUpdateRetailerMpin)
 		r.Patch("/update/{id}/kyc", app.RetailerHandler.HandleUpdateRetailerKYCStatus)
 		r.Patch("/update/{id}/block", app.RetailerHandler.HandleUpdateRetailerBlockStatus)
+		r.Patch("/update/{id}/block/payout", app.RetailerHandler.HandleUpdateRetailerPayoutBlockStatus)
 		r.Patch("/change/{id}/distributor", app.RetailerHandler.HandleChangeRetailersDistributor)
 		r.Patch("/update/{id}/aadhar/front", app.RetailerHandler.HandleUpdateRetailerAadharFrontImage)
 		r.Patch("/update/{id}/aadhar/back", app.RetailerHandler.HandleUpdateRetailerAadharBackImage)
