@@ -43,7 +43,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 func adminRoutes(router *chi.Mux, app *app.Application) {
 	// Public routes
 	router.Post("/admin/login", app.AdminHandler.HandleAdminLogin)
-	router.Post("/admin/create", app.AdminHandler.HandleCreateAdmin)
+	// router.Post("/admin/create", app.AdminHandler.HandleCreateAdmin)
 
 	// Protected routes
 	router.Route("/admin", func(r chi.Router) {
