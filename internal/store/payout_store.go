@@ -75,27 +75,27 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		return errors.New("insufficient wallet balance")
 	}
 
-	if pt.Amount >= 1000 && pt.Amount < 2000 {
-		pt.AdminCommision = 0.80
-		pt.RetailerCommision = 0.20
-		pt.MasterDistributorCommision = 0.0
-		pt.DistributorCommision = 0.0
+	if pt.Amount < 1000 {
+		return errors.New("minimum transaction amount is 1000")
+	}
+
+	if pt.Amount < 2000 {
+		commision.AdminCommision = commision.TotalCommision * 0.80
+		commision.RetailerCommision = commision.TotalCommision * 0.20
+		commision.MasterDistributorCommision = 0.0
+		commision.DistributorCommision = 0.0
 	}
 
 	if pt.Amount == 2000 {
-		pt.AdminCommision = 0.50
-		pt.RetailerCommision = 0.50
-		pt.MasterDistributorCommision = 0.0
-		pt.DistributorCommision = 0.0
+		commision.AdminCommision = commision.TotalCommision * 0.50
+		commision.RetailerCommision = commision.TotalCommision * 0.50
+		commision.MasterDistributorCommision = 0.0
+		commision.DistributorCommision = 0.0
 	}
 
 	retailerTransactionLimit, err := ps.getRetailerTransactionLimit(pt.RetailerID, "PAYOUT")
 	if err != nil {
 		return err
-	}
-
-	if pt.Amount < 1000 {
-		return errors.New("minimum transaction amount is 1000")
 	}
 
 	if pt.Amount > retailerTransactionLimit {
