@@ -88,6 +88,31 @@ func (rs *PostgresRevertTransactionStore) CreateRevertTransaction(rt *models.Rev
 		return err
 	}
 
+	if rt.RevertType == "ADVANCE" {
+		res, err := tx.Exec(
+			fmt.Sprintf(
+				`
+					UPDATE %s
+					SET advance_credit_due = advance_credit_due - $1,
+						updated_at = CURRENT_TIMESTAMP
+					WHERE %s = $2 AND $1 >= 0
+				`,
+				revertOnInfo.TableName, revertOnInfo.IDColumnName,
+			),
+			rt.Amount, rt.RevertOnID,
+		)
+		if err != nil {
+			return err
+		}
+		n, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			return errors.New("revert advance credit not found or already processed")
+		}
+	}
+
 	return tx.Commit()
 }
 

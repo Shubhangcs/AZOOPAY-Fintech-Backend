@@ -16,6 +16,7 @@ type RevertTransactionModel struct {
 	RevertByName         string    `json:"revert_by_name,omitempty"`
 	RevertByBusinessName *string   `json:"revert_by_business_name,omitempty"`
 	RevertOnName         string    `json:"revert_on_name,omitempty"`
+	RevertType           string    `json:"revert_type"`
 	RevertOnBusinessName *string   `json:"revert_on_business_name,omitempty"`
 	CreatedAT            time.Time `json:"created_at"`
 }

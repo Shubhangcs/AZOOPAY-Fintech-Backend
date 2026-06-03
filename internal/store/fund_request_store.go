@@ -26,6 +26,7 @@ type FundRequestStore interface {
 	GetFundRequestsByRequesterID(requesterID string, p utils.QueryParams) ([]models.FundRequestModel, error)
 	GetFundRequestsByRequestToID(requestToID string, p utils.QueryParams) ([]models.FundRequestModel, error)
 	GetAllFundRequests(p utils.QueryParams) ([]models.FundRequestModel, error)
+	GetAdvanceCreditDueAmount(id string) (float64, error)
 }
 
 // Create Fund Request
@@ -110,6 +111,31 @@ func (fs *PostgresFundRequestStore) ApproveFundRequest(fundRequestID int64) erro
 			return errors.New("requester not found")
 		}
 		return err
+	}
+
+	if fr.RequestType == "ADVANCE" {
+		res, err := tx.Exec(
+			fmt.Sprintf(
+				`
+					UPDATE %s
+					SET advance_credit_due = advance_credit_due + $1,
+						updated_at = CURRENT_TIMESTAMP
+					WHERE %s = $2 AND $1 >= 0
+				`,
+				requesterInfo.TableName, requesterInfo.IDColumnName,
+			),
+			fr.Amount, fr.RequesterID,
+		)
+		if err != nil {
+			return err
+		}
+		n, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			return errors.New("fund request advance credit not found or already processed")
+		}
 	}
 
 	// Updating The Fund Request Status To Accepted
@@ -262,4 +288,27 @@ func scanFundRequests(db *sql.DB, query string, args ...any) ([]models.FundReque
 		requests = append(requests, fr)
 	}
 	return requests, rows.Err()
+}
+
+func (fs *PostgresFundRequestStore) GetAdvanceCreditDueAmount(id string) (float64, error) {
+	userInfo, err := getUserTableInfo(id)
+	if err != nil {
+		return 0, err
+	}
+
+	var advanceCreditDue float64
+	err = fs.db.QueryRow(
+		fmt.Sprintf(
+			`SELECT advance_credit_due FROM %s WHERE %s = $1`,
+			userInfo.TableName, userInfo.IDColumnName,
+		),
+		id,
+	).Scan(
+		&advanceCreditDue,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return advanceCreditDue, nil
 }

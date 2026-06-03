@@ -58,7 +58,7 @@ func (fh *FundRequestHandler) HandleRetailerRequestToDistributor(w http.Response
 	fh.handleCreate(w, r, "fund request from retailer to distributor", "R", "D")
 }
 
-// Common Create Function
+// Common Create Fund Request Function
 func (fh *FundRequestHandler) handleCreate(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -261,4 +261,24 @@ func isFundRequestClientErr(err error) bool {
 		msg == "request_to user not found" ||
 		msg == "KYC is not verified" ||
 		strings.HasPrefix(msg, "fund request is already ")
+}
+
+func (fh *FundRequestHandler) HandleGetAdvanceCreditDue(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, fh.logger, "get advance credit due", err)
+		return
+	}
+
+	amount, err := fh.fundRequestStore.GetAdvanceCreditDueAmount(id)
+	if err != nil {
+		utils.ServerError(w, fh.logger, "get advance credit due", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":    "advance credit due fetched successfully",
+		"due_amount": amount,
+	})
+
 }
