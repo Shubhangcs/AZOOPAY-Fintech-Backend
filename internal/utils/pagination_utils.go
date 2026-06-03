@@ -31,6 +31,7 @@ type QueryParams struct {
 	StartDate *time.Time
 	EndDate   *time.Time
 	Status    *string
+	Types     *string
 	Search    *string
 }
 
@@ -51,6 +52,11 @@ func ReadQueryParams(r *http.Request) QueryParams {
 		status = &s
 	}
 
+	var types *string
+	if t := r.URL.Query().Get("types"); t != "" {
+		types = &t
+	}
+
 	var search *string
 	if s := r.URL.Query().Get("search"); s != "" {
 		search = &s
@@ -62,6 +68,7 @@ func ReadQueryParams(r *http.Request) QueryParams {
 		StartDate: startDate,
 		EndDate:   endDate,
 		Status:    status,
+		Types:     types,
 		Search:    search,
 	}
 }

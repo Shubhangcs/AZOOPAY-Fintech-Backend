@@ -235,35 +235,38 @@ LEFT JOIN LATERAL (
 func (fs *PostgresFundRequestStore) GetFundRequestsByRequesterID(requesterID string, p utils.QueryParams) ([]models.FundRequestModel, error) {
 	q := fundRequestSelectBase + `
 	WHERE fr.requester_id = $1
+	AND fr.request_type = $6
 	AND fr.created_at >= COALESCE($4, '-infinity'::TIMESTAMPTZ)
 	AND fr.created_at <= COALESCE($5, 'infinity'::TIMESTAMPTZ)
 	ORDER BY fr.created_at DESC
 	LIMIT $2 OFFSET $3;
 	`
-	return scanFundRequests(fs.db, q, requesterID, p.Limit, p.Offset, p.StartDate, p.EndDate)
+	return scanFundRequests(fs.db, q, requesterID, p.Limit, p.Offset, p.StartDate, p.EndDate , p.Types)
 }
 
 // Get Fund Requests By Request To ID
 func (fs *PostgresFundRequestStore) GetFundRequestsByRequestToID(requestToID string, p utils.QueryParams) ([]models.FundRequestModel, error) {
 	q := fundRequestSelectBase + `
 	WHERE fr.request_to_id = $1
+	AND fr.request_type = $6
 	AND fr.created_at >= COALESCE($4, '-infinity'::TIMESTAMPTZ)
 	AND fr.created_at <= COALESCE($5, 'infinity'::TIMESTAMPTZ)
 	ORDER BY fr.created_at DESC
 	LIMIT $2 OFFSET $3;
 	`
-	return scanFundRequests(fs.db, q, requestToID, p.Limit, p.Offset, p.StartDate, p.EndDate)
+	return scanFundRequests(fs.db, q, requestToID, p.Limit, p.Offset, p.StartDate, p.EndDate , p.Types)
 }
 
 // Get All Fund Requests
 func (fs *PostgresFundRequestStore) GetAllFundRequests(p utils.QueryParams) ([]models.FundRequestModel, error) {
 	q := fundRequestSelectBase + `
 	WHERE fr.created_at >= COALESCE($3, '-infinity'::TIMESTAMPTZ)
+	AND fr.request_type = $5
 	AND fr.created_at <= COALESCE($4, 'infinity'::TIMESTAMPTZ)
 	ORDER BY fr.created_at DESC
 	LIMIT $1 OFFSET $2;
 	`
-	return scanFundRequests(fs.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate)
+	return scanFundRequests(fs.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate , p.Types)
 }
 
 func scanFundRequests(db *sql.DB, query string, args ...any) ([]models.FundRequestModel, error) {
