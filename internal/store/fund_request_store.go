@@ -62,7 +62,7 @@ func (fs *PostgresFundRequestStore) ApproveFundRequest(fundRequestID int64) erro
 		FROM fund_requests WHERE fund_request_id = $1 FOR UPDATE
 	`, fundRequestID).Scan(
 		&fr.FundRequestID, &fr.RequesterID, &fr.RequestToID,
-		&fr.Amount, &fr.RequestStatus, &fr.Remarks, fr.RequestType,
+		&fr.Amount, &fr.RequestStatus, &fr.Remarks, &fr.RequestType,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
