@@ -58,11 +58,11 @@ func (fs *PostgresFundRequestStore) ApproveFundRequest(fundRequestID int64) erro
 
 	var fr models.FundRequestModel
 	err = tx.QueryRow(`
-		SELECT fund_request_id, requester_id, request_to_id, amount, request_status, remarks
+		SELECT fund_request_id, requester_id, request_to_id, amount, request_status, remarks, request_type
 		FROM fund_requests WHERE fund_request_id = $1 FOR UPDATE
 	`, fundRequestID).Scan(
 		&fr.FundRequestID, &fr.RequesterID, &fr.RequestToID,
-		&fr.Amount, &fr.RequestStatus, &fr.Remarks,
+		&fr.Amount, &fr.RequestStatus, &fr.Remarks, fr.RequestType,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
