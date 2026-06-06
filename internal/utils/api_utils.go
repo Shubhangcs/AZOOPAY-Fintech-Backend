@@ -30,7 +30,7 @@ const (
 	BalanceCheck           = "/recharge/balanceCheck"
 )
 
-var apiHTTPClient = &http.Client{Timeout: 30 * time.Second}
+var apiHTTPClient = &http.Client{Timeout: 70 * time.Second}
 
 func PostRequest(url, authKey, authValue string, body map[string]any, res any) error {
 	b, err := json.Marshal(body)
