@@ -54,6 +54,7 @@ func adminRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/get/{id}/wallet", app.AdminHandler.HandleGetAdminWalletBalance)
 		r.Get("/recharge-kit/recharge-balance", app.AdminHandler.HandleGetRechargeKitRechargeBalance)
 		r.Get("/recharge-kit/primary-balance", app.AdminHandler.HandleGetRechargeKitPrimaryBalance)
+		r.Get("/payntric/balance", app.AdminHandler.HandleGetPayntricWalletBalance)
 		r.Put("/update/{id}", app.AdminHandler.HandleUpdateAdminDetails)
 		r.Patch("/update/{id}/password", app.AdminHandler.HandleUpdateAdminPassword)
 		r.Patch("/update/{id}/wallet", app.AdminHandler.HandleUpdateAdminWalletBalance)
@@ -282,7 +283,7 @@ func fundRequestRoutes(router *chi.Mux, app *app.Application) {
 		r.Patch("/reject/{id}", app.FundRequestHandler.HandleRejectFundRequest)
 		r.Get("/requester/{id}", app.FundRequestHandler.HandleGetFundRequestsByRequesterID)
 		r.Get("/request-to/{id}", app.FundRequestHandler.HandleGetFundRequestsByRequestToID)
-		r.Get("/advance-credit-due/{id}" , app.FundRequestHandler.HandleGetAdvanceCreditDue)
+		r.Get("/advance-credit-due/{id}", app.FundRequestHandler.HandleGetAdvanceCreditDue)
 		r.Get("/all", app.FundRequestHandler.HandleGetAllFundRequests)
 	})
 }
@@ -292,7 +293,9 @@ func payoutRoutes(router *chi.Mux, app *app.Application) {
 		r.Use(middlewares.AuthorizationMiddleware)
 
 		r.Post("/create", app.PayoutHandler.HandleCreatePayoutTransaction)
+		r.Post("/create/new", app.PayoutHandler.HandleCreatePayntricPayoutTransaction)
 		r.Post("/status-check/{id}", app.PayoutHandler.HandleCheckPayoutStatus)
+		r.Post("/status-check/new/{id}", app.PayoutHandler.HandlePayntricCheckPayoutStatus)
 		r.Post("/refund/{id}", app.PayoutHandler.HandleRefundPayout)
 		r.Put("/update/{id}", app.PayoutHandler.HandleUpdatePayoutTransaction)
 		r.Get("/all", app.PayoutHandler.HandleGetAllPayoutTransactions)

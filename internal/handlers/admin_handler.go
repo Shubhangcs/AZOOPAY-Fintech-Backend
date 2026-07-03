@@ -342,3 +342,21 @@ func (ah *AdminHandler) HandleGetRechargeKitPrimaryBalance(w http.ResponseWriter
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "primary wallet balance fetched", "balance": resp})
 }
+
+func (ah *AdminHandler) HandleGetPayntricWalletBalance(w http.ResponseWriter, r *http.Request) {
+	if utils.PayntricAPI == "" || utils.PayntricAPIToken == "" || utils.PayntricUsername == "" {
+		utils.ServerError(w, ah.logger, "get payntric balance", errors.New("payntric payout balance check api not configured"))
+		return
+	}
+	var resp models.PayntricWalletBalanceResponseModel
+	if err := utils.GetRequest2(
+		utils.PayntricAPI+utils.PayntricAPIToken,
+		"token", utils.PayntricAPIToken,
+		"username", utils.PayntricUsername,
+		&resp,
+	); err != nil {
+		utils.ServerError(w, ah.logger, "get payntric balance", err)
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "payntric wallet balance fetched", "balance": resp})
+}

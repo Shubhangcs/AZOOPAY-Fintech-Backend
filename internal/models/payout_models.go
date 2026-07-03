@@ -41,6 +41,10 @@ type PayoutTransactionModel struct {
 	RetailerBusinessName       *string   `json:"retailer_business_name,omitempty"`
 	BeforeBalance              float64   `json:"before_balance"`
 	AfterBalance               float64   `json:"after_balance"`
+	Latitude                   string    `json:"latitude"`
+	Longitude                  string    `json:"longitude"`
+	Email                      string    `json:"email"`
+	Address                    string    `json:"address"`
 	CreatedAT                  time.Time `json:"created_at"`
 	UpdatedAT                  time.Time `json:"updated_at"`
 }
@@ -93,5 +97,3 @@ func (pt *FinilizePayoutModel) ValidateFinilizePayoutModel() error {
 	}
 	return nil
 }
-
-

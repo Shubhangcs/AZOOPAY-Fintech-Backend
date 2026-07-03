@@ -137,6 +137,114 @@ func callPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (resp
 	return
 }
 
+func (ph *PayoutHandler) HandleCreatePayntricPayoutTransaction(w http.ResponseWriter, r *http.Request) {
+	if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayout); err != nil {
+		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("payout service is currently unavailable"))
+		return
+	}
+
+	var req models.PayoutTransactionModel
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	if err := req.ValidateInitilizePayout(); err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	if len(req.RetailerID) == 0 || string(req.RetailerID[0]) != "R" {
+		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("invalid retailer id"))
+		return
+	}
+
+	if err := ph.payoutStore.InitializePayoutTransaction(&req); err != nil {
+		if isPayoutClientErr(err) {
+			utils.BadRequest(w, ph.logger, "create payout transaction", err)
+			return
+		}
+		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	// Hit the external payout API and auto-finalize based on the response.
+	apiResp, finalStatus, orderID, operatorTxnID := callNewPayoutAPI(ph.logger, &req)
+
+	if err := ph.payoutStore.FinalizePayout(req.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
+		utils.ServerError(w, ph.logger, "finalize payout transaction", err)
+		return
+	}
+
+	req.PayoutTransactionStatus = finalStatus
+	req.OrderID = orderID
+	req.OperatorTransactionID = operatorTxnID
+
+	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{
+		"message":            "payout transaction processed",
+		"payout_transaction": req,
+		"api_response":       apiResp,
+	})
+}
+
+func callNewPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (resp *models.APIResponseModel, finalStatus, orderID, operatorTxnID string) {
+	finalStatus = "FAILED"
+
+	if utils.PayntricAPI == "" || utils.PayntricAPIToken == "" || utils.PayntricUsername == "" {
+		logger.Error("payntric payout api not configured", "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	var apiResp models.PayntricAPIResponseModel
+	err := utils.PostRequest2(
+		utils.PayntricAPI+utils.PayntricPayout,
+		"token",
+		utils.PayntricAPIToken,
+		"username",
+		utils.PayntricUsername,
+		map[string]any{
+			"mobileNumber":    pt.MobileNumber,
+			"beneficiaryName": pt.BeneficiaryName,
+			"accountNumber":   pt.AccountNumber,
+			"ifscCode":        pt.IFSCCode,
+			"bankName":        pt.BankName,
+			"amount":          pt.Amount,
+			"transferMode":    pt.TransferType,
+			"requestId":       pt.PartnerRequestID,
+			"emailId":         pt.Email,
+			"latitude":        pt.Latitude,
+			"longitude":       pt.Longitude,
+			"merchantAddress": pt.Address,
+			"purpose":         pt.Remarks,
+		},
+		&apiResp,
+	)
+	if err != nil {
+		logger.Error("payout api call failed", "error", err, "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	resp = &models.APIResponseModel{
+		Message:               apiResp.Message,
+		OrderID:               apiResp.Data.UTR,
+		OperatorTransactionID: apiResp.Data.OpRefID,
+		PartnerRequestID:      apiResp.Data.RequestID,
+	}
+	orderID = apiResp.Data.UTR
+	operatorTxnID = apiResp.Data.OpRefID
+
+	if apiResp.Status == "FAILED" || apiResp.Status == "REVERSED" {
+		logger.Error("payntric payout api error", "msg", apiResp.Message, "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	finalStatus = apiResp.Status
+	return
+}
+
 func (ph *PayoutHandler) HandleCheckPayoutStatus(w http.ResponseWriter, r *http.Request) {
 	payoutID, err := utils.ReadParamID(r)
 	if err != nil {
@@ -223,6 +331,88 @@ func callPayoutStatusAPI(logger *slog.Logger, partnerRequestID, payoutTransactio
 	default:
 		finalStatus = "PENDING" // status 2 or any hold code
 	}
+	return
+}
+
+func (ph *PayoutHandler) HandlePayntricCheckPayoutStatus(w http.ResponseWriter, r *http.Request) {
+	payoutID, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ph.logger, "check payout status", err)
+		return
+	}
+
+	pt, err := ph.payoutStore.GetPayoutTransactionByID(payoutID)
+	if err != nil {
+		if err.Error() == "payout transaction not found" {
+			utils.BadRequest(w, ph.logger, "check payout status", err)
+			return
+		}
+		utils.ServerError(w, ph.logger, "check payout status", err)
+		return
+	}
+
+	// If already finalized, return current record without calling the API
+	// if pt.PayoutTransactionStatus != "PENDING" {
+	// 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+	// 		"message":            "payout already finalized",
+	// 		"payout_transaction": pt,
+	// 	})
+	// 	return
+	// }
+
+	apiResp, finalStatus, orderID, operatorTxnID := callNewPayoutStatusAPI(ph.logger, pt.PartnerRequestID, pt.PayoutTransactionID)
+
+	if err = ph.payoutStore.FinalizePayout(pt.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
+		utils.ServerError(w, ph.logger, "check payout status finalize", err)
+		return
+	}
+
+	pt.PayoutTransactionStatus = finalStatus
+	pt.OrderID = orderID
+	pt.OperatorTransactionID = operatorTxnID
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":            "payout status updated",
+		"payout_transaction": pt,
+		"api_response":       apiResp,
+	})
+}
+
+func callNewPayoutStatusAPI(logger *slog.Logger, partnerRequestID, payoutTransactionID string) (resp *models.APIResponseModel, finalStatus, orderID, operatorTxnID string) {
+	finalStatus = "PENDING"
+
+	if utils.PayntricAPI == "" || utils.PayntricAPIToken == "" || utils.PayntricUsername == "" || utils.PayntricPayout == "" {
+		logger.Error("payntric payout status api not configured", "payout_transaction_id", payoutTransactionID)
+		return
+	}
+
+	var apiResp models.PayntricAPIResponseModel
+	err := utils.PostRequest2(
+		utils.RechargeKitAPI1+utils.PayoutStatus,
+		"token",
+		utils.PayntricAPIToken,
+		"username",
+		utils.PayntricUsername,
+		map[string]any{
+			"requestId": partnerRequestID,
+		},
+		&apiResp,
+	)
+	if err != nil {
+		logger.Error("payntric payout status api call failed", "error", err, "payout_transaction_id", payoutTransactionID)
+		return
+	}
+
+	resp = &models.APIResponseModel{}
+	orderID = apiResp.Data.UTR
+	operatorTxnID = apiResp.Data.OpRefID
+
+	if apiResp.Status != "SUCCESS" && apiResp.Status != "PENDING" {
+		logger.Error("payout status api error", "msg", apiResp.Message, "payout_transaction_id", payoutTransactionID)
+		return // stays PENDING
+	}
+
+	finalStatus = apiResp.Status
 	return
 }
 
