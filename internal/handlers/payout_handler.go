@@ -227,6 +227,8 @@ func callNewPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (r
 		return
 	}
 
+	fmt.Println(apiResp)
+
 	resp = &models.APIResponseModel{
 		Message:               apiResp.Message,
 		OrderID:               apiResp.Data.UTR,
