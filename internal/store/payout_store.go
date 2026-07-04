@@ -45,6 +45,8 @@ type retailerChain struct {
 	blocked       bool
 	payoutBlocked bool
 	balance       float64
+	address       string
+	email         string
 }
 
 func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models.PayoutTransactionModel) error {

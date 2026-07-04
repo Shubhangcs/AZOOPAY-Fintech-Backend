@@ -221,6 +221,8 @@ func getRetailerDetails(
 		r.is_payout_blocked,
 		r.retailer_wallet_balance,
 		r.distributor_id,
+		r.address,
+		r.email,
 		d.master_distributor_id,
 		md.admin_id
 	FROM retailers r
@@ -231,7 +233,7 @@ func getRetailerDetails(
 	var rc retailerChain
 	err := db.QueryRow(q, retailerID).Scan(
 		&rc.kyc, &rc.blocked, &rc.payoutBlocked, &rc.balance,
-		&rc.distributorID, &rc.mdID, &rc.adminID,
+		&rc.distributorID, &rc.address, &rc.email, &rc.mdID, &rc.adminID,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
