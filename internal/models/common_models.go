@@ -15,10 +15,10 @@ type APIResponseModel struct {
 }
 
 type PayntricAPIResponseModel struct {
-	Status     string      `json:"status"`
-	StatusCode string      `json:"statuscode"`
-	Message    string      `json:"message"`
-	Data       *PayoutData `json:"data"`
+	Status     string     `json:"status"`
+	StatusCode string     `json:"statuscode"`
+	Message    string     `json:"message"`
+	Data       PayoutData `json:"data"`
 }
 
 type PayoutData struct {
