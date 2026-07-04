@@ -63,7 +63,7 @@ func PostRequest(url, authKey, authValue string, body map[string]any, res any) e
 	}
 	return nil
 }
-func PostRequest2(url, authKey1, authKey2, authValue1, authValue2 string, body map[string]any, res any) error {
+func PostRequest2(url, authKey1, authValue1, authKey2, authValue2 string, body map[string]any, res any) error {
 	b, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("PostRequest marshal: %w", err)
