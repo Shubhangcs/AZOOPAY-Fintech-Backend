@@ -14,7 +14,7 @@ var (
 	RechargeKitAPI2      = os.Getenv("RECHARGE_KIT_API_2")
 	RechargeKitVerifyAPI = os.Getenv("RECHARGE_KIT_VERIFY_API")
 	RechargeKitAPIToken  = os.Getenv("RECHARGE_KIT_API_TOKEN")
-	PayntricAPI          = os.Getenv("PYNTRIC_API")
+	PayntricAPI          = os.Getenv("PAYNTRIC_API")
 	PayntricAPIToken     = os.Getenv("PAYNTRIC_API_TOKEN")
 	PayntricUsername     = os.Getenv("PAYNTRIC_USERNAME")
 )
