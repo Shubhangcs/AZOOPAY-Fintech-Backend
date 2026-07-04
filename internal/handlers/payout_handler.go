@@ -218,7 +218,7 @@ func callNewPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (r
 			"latitude":        pt.Latitude,
 			"longitude":       pt.Longitude,
 			"merchantAddress": pt.Address,
-			"purpose":         pt.Remarks,
+			"purpose":         "Just Payout",
 		},
 		&apiResp,
 	)
