@@ -10,6 +10,7 @@ var validPayoutStatuses = map[string]bool{
 	"PENDING": true,
 	"FAILED":  true,
 	"REFUND":  true,
+	"REVERSED": true,
 }
 
 var validTransferTypes = map[string]bool{
