@@ -10,6 +10,7 @@ type ApiDownModel struct {
 
 const (
 	ServicePayout          = "payout"
+	ServicePayoutPPL       = "payout_ppl"
 	ServiceMobileRecharge  = "mobile_recharge"
 	ServiceDTHRecharge     = "dth_recharge"
 	ServiceElectricityBill = "electricity_bill"

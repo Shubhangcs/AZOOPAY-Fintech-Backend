@@ -227,6 +227,22 @@ func callNewPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (r
 		return
 	}
 
+	fmt.Println(map[string]any{
+		"mobileNumber":    pt.MobileNumber,
+		"beneficiaryName": pt.BeneficiaryName,
+		"accountNumber":   pt.AccountNumber,
+		"ifscCode":        pt.IFSCCode,
+		"bankName":        pt.BankName,
+		"amount":          pt.Amount,
+		"transferMode":    pt.TransferType,
+		"requestId":       pt.PartnerRequestID,
+		"emailId":         pt.Email,
+		"latitude":        pt.Latitude,
+		"longitude":       pt.Longitude,
+		"merchantAddress": pt.Address,
+		"purpose":         pt.Remarks,
+	})
+
 	fmt.Println(apiResp)
 
 	resp = &models.APIResponseModel{
