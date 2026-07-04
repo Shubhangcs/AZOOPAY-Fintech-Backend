@@ -58,6 +58,8 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 	if err != nil {
 		return err
 	}
+	pt.Address = rc.address
+	pt.Email = rc.email
 
 	if !rc.kyc {
 		return errors.New("retailer KYC is not verified")
