@@ -350,7 +350,7 @@ func (ah *AdminHandler) HandleGetPayntricWalletBalance(w http.ResponseWriter, r 
 	}
 	var resp models.PayntricWalletBalanceResponseModel
 	if err := utils.GetRequest2(
-		utils.PayntricAPI+utils.PayntricAPIToken,
+		utils.PayntricAPI+utils.PayntricBalanceCheck,
 		"token", utils.PayntricAPIToken,
 		"username", utils.PayntricUsername,
 		&resp,
