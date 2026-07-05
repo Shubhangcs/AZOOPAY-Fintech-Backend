@@ -229,28 +229,10 @@ func callNewPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (r
 		return
 	}
 
-	fmt.Println(map[string]any{
-		"mobileNumber":    pt.MobileNumber,
-		"beneficiaryName": pt.BeneficiaryName,
-		"accountNumber":   pt.AccountNumber,
-		"ifscCode":        pt.IFSCCode,
-		"bankName":        pt.BankName,
-		"amount":          pt.Amount,
-		"transferMode":    pt.TransferType,
-		"requestId":       pt.PartnerRequestID,
-		"emailId":         pt.Email,
-		"latitude":        pt.Latitude,
-		"longitude":       pt.Longitude,
-		"merchantAddress": pt.Address,
-		"purpose":         pt.Remarks,
-	})
-
-	fmt.Println(apiResp)
-
 	resp = &models.APIResponseModel{
 		Message:               apiResp.Message,
-		OrderID:               apiResp.Data.UTR,
-		OperatorTransactionID: apiResp.Data.OpRefID,
+		OrderID:               apiResp.Data.OpRefID,
+		OperatorTransactionID: apiResp.Data.UTR,
 		PartnerRequestID:      apiResp.Data.RequestID,
 	}
 	orderID = apiResp.Data.UTR
@@ -401,7 +383,7 @@ func (ph *PayoutHandler) HandlePayntricCheckPayoutStatus(w http.ResponseWriter, 
 func callNewPayoutStatusAPI(logger *slog.Logger, partnerRequestID, payoutTransactionID string) (resp *models.APIResponseModel, finalStatus, orderID, operatorTxnID string) {
 	finalStatus = "PENDING"
 
-	if utils.PayntricAPI == "" || utils.PayntricAPIToken == "" || utils.PayntricUsername == "" || utils.PayntricPayout == "" {
+	if utils.PayntricAPI == "" || utils.PayntricAPIToken == "" || utils.PayntricUsername == "" || utils.PayntricPayoutStatus == "" {
 		logger.Error("payntric payout status api not configured", "payout_transaction_id", payoutTransactionID)
 		return
 	}
@@ -421,8 +403,8 @@ func callNewPayoutStatusAPI(logger *slog.Logger, partnerRequestID, payoutTransac
 	}
 
 	resp = &models.APIResponseModel{}
-	orderID = apiResp.Data.UTR
-	operatorTxnID = apiResp.Data.OpRefID
+	orderID = apiResp.Data.OpRefID
+	operatorTxnID = apiResp.Data.UTR
 
 	if apiResp.Status != "SUCCESS" && apiResp.Status != "PENDING" {
 		logger.Error("payout status api error", "msg", apiResp.Message, "payout_transaction_id", payoutTransactionID)
