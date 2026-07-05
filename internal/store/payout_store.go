@@ -126,14 +126,15 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		account_number, ifsc_code, amount, transfer_type,
 		admin_commision, master_distributor_commision,
 		distributor_commision, retailer_commision,
-		payout_transaction_status
+		payout_transaction_status, api_provider
 	) VALUES (
 		$1, '', $2,
 		'', $3, $4, $5,
 		$6, $7, $8, $9,
 		$10, $11,
 		$12, $13,
-		'PENDING'
+		'PENDING',
+		$14
 	)
 	RETURNING payout_transaction_id, payout_transaction_status, created_at, updated_at;
 	`
@@ -143,6 +144,7 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		pt.AccountNumber, pt.IFSCCode, pt.Amount, pt.TransferType,
 		pt.AdminCommision, pt.MasterDistributorCommision,
 		pt.DistributorCommision, pt.RetailerCommision,
+		pt.APIProvider,
 	).Scan(&pt.PayoutTransactionID, &pt.PayoutTransactionStatus, &pt.CreatedAT, &pt.UpdatedAT); err != nil {
 		return err
 	}
@@ -337,7 +339,8 @@ SELECT
 	COALESCE(r.retailer_name, '')    AS retailer_name,
 	r.retailer_business_name,
 	COALESCE(wt.before_balance, 0)  AS before_balance,
-	COALESCE(wt.after_balance, 0)   AS after_balance
+	COALESCE(wt.after_balance, 0)   AS after_balance,
+	pt.api_provider
 FROM payout_transactions pt
 JOIN retailers r ON pt.retailer_id = r.retailer_id
 LEFT JOIN wallet_transactions wt ON wt.reference_id = pt.payout_transaction_id::TEXT
@@ -453,6 +456,7 @@ func scanPayoutTransactions(db *sql.DB, query string, args ...any) ([]models.Pay
 			&pt.PayoutTransactionStatus, &pt.CreatedAT, &pt.UpdatedAT,
 			&pt.RetailerName, &pt.RetailerBusinessName,
 			&pt.BeforeBalance, &pt.AfterBalance,
+			&pt.APIProvider,
 		); err != nil {
 			return nil, err
 		}

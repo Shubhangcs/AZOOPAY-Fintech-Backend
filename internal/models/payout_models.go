@@ -6,10 +6,10 @@ import (
 )
 
 var validPayoutStatuses = map[string]bool{
-	"SUCCESS": true,
-	"PENDING": true,
-	"FAILED":  true,
-	"REFUND":  true,
+	"SUCCESS":  true,
+	"PENDING":  true,
+	"FAILED":   true,
+	"REFUND":   true,
 	"REVERSED": true,
 }
 
@@ -46,6 +46,7 @@ type PayoutTransactionModel struct {
 	Longitude                  string    `json:"longitude"`
 	Email                      string    `json:"email"`
 	Address                    string    `json:"address"`
+	APIProvider                string    `json:"api_provider"`
 	CreatedAT                  time.Time `json:"created_at"`
 	UpdatedAT                  time.Time `json:"updated_at"`
 }

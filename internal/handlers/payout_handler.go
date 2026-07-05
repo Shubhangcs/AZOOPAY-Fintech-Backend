@@ -58,6 +58,7 @@ func (ph *PayoutHandler) HandleCreatePayoutTransaction(w http.ResponseWriter, r 
 		return
 	}
 
+	req.APIProvider = "RKIT"
 	if err := ph.payoutStore.InitializePayoutTransaction(&req); err != nil {
 		if isPayoutClientErr(err) {
 			utils.BadRequest(w, ph.logger, "create payout transaction", err)
@@ -162,6 +163,7 @@ func (ph *PayoutHandler) HandleCreatePayntricPayoutTransaction(w http.ResponseWr
 		return
 	}
 
+	req.APIProvider = "PNTC"
 	if err := ph.payoutStore.InitializePayoutTransaction(&req); err != nil {
 		if isPayoutClientErr(err) {
 			utils.BadRequest(w, ph.logger, "create payout transaction", err)
