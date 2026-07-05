@@ -79,8 +79,12 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		return errors.New("insufficient wallet balance")
 	}
 
-	if pt.Amount < 1000 {
+	if pt.Amount < 1000 && pt.APIProvider == "RKIT" {
 		return errors.New("minimum transaction amount is 1000")
+	}
+
+	if pt.Amount < 100 && pt.APIProvider == "PNTC" {
+		return errors.New("minimum transaction amount is 100")
 	}
 
 	if pt.Amount < 2000 {
