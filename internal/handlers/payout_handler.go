@@ -408,7 +408,7 @@ func callNewPayoutStatusAPI(logger *slog.Logger, partnerRequestID, payoutTransac
 
 	var apiResp models.PayntricAPIResponseModel
 	err := utils.GetRequest2(
-		utils.RechargeKitAPI1+utils.PayoutStatus+"?requestId="+partnerRequestID,
+		utils.PayntricAPI+utils.PayntricPayoutStatus+"?requestId="+partnerRequestID,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
