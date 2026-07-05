@@ -138,13 +138,13 @@ func callPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (resp
 }
 
 func (ph *PayoutHandler) HandleCreatePayntricPayoutTransaction(w http.ResponseWriter, r *http.Request) {
-	// if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayout); err != nil {
-	// 	utils.ServerError(w, ph.logger, "create payout transaction", err)
-	// 	return
-	// } else if down {
-	// 	utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("payout service is currently unavailable"))
-	// 	return
-	// }
+	if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayoutPPL); err != nil {
+		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("payout service is currently unavailable"))
+		return
+	}
 
 	var req models.PayoutTransactionModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -405,15 +405,12 @@ func callNewPayoutStatusAPI(logger *slog.Logger, partnerRequestID, payoutTransac
 	}
 
 	var apiResp models.PayntricAPIResponseModel
-	err := utils.PostRequest2(
-		utils.RechargeKitAPI1+utils.PayoutStatus,
+	err := utils.GetRequest2(
+		utils.RechargeKitAPI1+utils.PayoutStatus+"?requestId="+partnerRequestID,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
 		utils.PayntricUsername,
-		map[string]any{
-			"requestId": partnerRequestID,
-		},
 		&apiResp,
 	)
 	if err != nil {
