@@ -87,16 +87,16 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		return errors.New("minimum transaction amount is 100")
 	}
 
-	if pt.Amount < 2000 {
-		commision.AdminCommision = commision.TotalCommision * 0.80
-		commision.RetailerCommision = commision.TotalCommision * 0.20
+	if pt.Amount <= 2000 && pt.Amount > 1000 {
+		commision.AdminCommision = commision.TotalCommision * 0.50
+		commision.RetailerCommision = commision.TotalCommision * 0.50
 		commision.MasterDistributorCommision = 0.0
 		commision.DistributorCommision = 0.0
 	}
 
-	if pt.Amount == 2000 {
-		commision.AdminCommision = commision.TotalCommision * 0.50
-		commision.RetailerCommision = commision.TotalCommision * 0.50
+	if pt.Amount == 1000 {
+		commision.AdminCommision = commision.TotalCommision * 0.60
+		commision.RetailerCommision = commision.TotalCommision * 0.40
 		commision.MasterDistributorCommision = 0.0
 		commision.DistributorCommision = 0.0
 	}

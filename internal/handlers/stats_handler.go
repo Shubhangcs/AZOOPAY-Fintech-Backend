@@ -64,3 +64,12 @@ func (sh *StatsHandler) HandleGetMasterDistributorStats(w http.ResponseWriter, r
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "stats fetched successfully", "stats": stats})
 }
+
+func (sh *StatsHandler) HandleGetTotalStats(w http.ResponseWriter, r *http.Request) {
+	res, err := sh.statsStore.GetTotalStats()
+	if err != nil {
+		utils.ServerError(w, sh.logger, "get total stats", err)
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "total stats fetched successfully", "stats": res})
+}

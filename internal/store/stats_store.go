@@ -19,6 +19,7 @@ type StatsStore interface {
 	GetRetailerStats(retailerID string) (*models.StatsResponse, error)
 	GetDistributorStats(distributorID string) (*models.StatsResponse, error)
 	GetMasterDistributorStats(masterDistributorID string) (*models.StatsResponse, error)
+	GetTotalStats() (*models.StatsModel, error)
 }
 
 const statsQuery = `
@@ -121,4 +122,29 @@ func (ss *PostgresStatsStore) GetMasterDistributorStats(masterDistributorID stri
 	`
 	query := fmt.Sprintf(statsQuery, union)
 	return scanStats(ss.db.QueryRow(query, masterDistributorID))
+}
+
+func (ss *PostgresStatsStore) GetTotalStats() (*models.StatsModel, error) {
+	query := `
+		SELECT 
+    		(SELECT SUM(retailer_wallet_balance) FROM retailers) AS total_retailer_balance,
+    		(SELECT SUM(distributor_wallet_balance) FROM distributors) AS total_distributor_balance,
+    		(SELECT SUM(master_distributor_wallet_balance) FROM master_distributors) AS total_md_balance,
+    		(SELECT SUM(advance_credit) FROM retailers) AS total_retailer_advance_credit,
+    		(SELECT SUM(advance_credit) FROM distributors) AS total_distributor_advance_credit,
+    		(SELECT SUM(advance_credit) FROM master_distributors) AS total_md_advance_credit
+	`
+	var statsModel models.StatsModel
+	if err := ss.db.QueryRow(query).Scan(
+		&statsModel.TotalRetailerWalletBalance,
+		&statsModel.TotalDistributorWalletBalance,
+		&statsModel.TotalMasterDistributorWalletBalance,
+		&statsModel.TotalRetailerAdvanceCredit,
+		&statsModel.TotalDistributorAdvanceCredit,
+		&statsModel.TotalMasterDistributorAdvanceCredit,
+	); err != nil {
+		return nil, err
+	}
+
+	return &statsModel, nil
 }

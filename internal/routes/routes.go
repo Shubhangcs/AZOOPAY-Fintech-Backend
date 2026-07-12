@@ -396,6 +396,7 @@ func statsRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/retailer/{id}", app.StatsHandler.HandleGetRetailerStats)
 		r.Get("/distributor/{id}", app.StatsHandler.HandleGetDistributorStats)
 		r.Get("/md/{id}", app.StatsHandler.HandleGetMasterDistributorStats)
+		r.Get("/admin/total" , app.StatsHandler.HandleGetTotalStats)
 	})
 }
 

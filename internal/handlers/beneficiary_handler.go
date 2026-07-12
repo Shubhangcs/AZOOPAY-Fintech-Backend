@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"log"
 	"log/slog"
 	"net/http"
 
@@ -133,8 +132,6 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New(apiResp.Message))
 		return
 	}
-
-	log.Println(apiResp)
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": apiResp.Data})
 }

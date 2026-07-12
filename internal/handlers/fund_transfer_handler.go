@@ -71,7 +71,7 @@ func (fh *FundTransferHandler) handleTransfer(
 	}
 
 	if req.Remarks == "" {
-		req.Remarks = fmt.Sprintf("Fund transfer from %s to %s", req.FundTransfererID, req.FundReceiverID)
+		req.Remarks = fmt.Sprintf("Fund transfer from %s with id %s to %s with id %s", req.TransfererName, req.FundTransfererID, req.ReceiverName, req.FundReceiverID)
 	}
 
 	if err := transferFn(&req); err != nil {
