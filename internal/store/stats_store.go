@@ -130,9 +130,9 @@ func (ss *PostgresStatsStore) GetTotalStats() (*models.StatsModel, error) {
     		(SELECT SUM(retailer_wallet_balance) FROM retailers) AS total_retailer_balance,
     		(SELECT SUM(distributor_wallet_balance) FROM distributors) AS total_distributor_balance,
     		(SELECT SUM(master_distributor_wallet_balance) FROM master_distributors) AS total_md_balance,
-    		(SELECT SUM(advance_credit) FROM retailers) AS total_retailer_advance_credit,
-    		(SELECT SUM(advance_credit) FROM distributors) AS total_distributor_advance_credit,
-    		(SELECT SUM(advance_credit) FROM master_distributors) AS total_md_advance_credit
+    		(SELECT SUM(advance_credit_due) FROM retailers) AS total_retailer_advance_credit,
+    		(SELECT SUM(advance_credit_due) FROM distributors) AS total_distributor_advance_credit,
+    		(SELECT SUM(advance_credit_due) FROM master_distributors) AS total_md_advance_credit
 	`
 	var statsModel models.StatsModel
 	if err := ss.db.QueryRow(query).Scan(
