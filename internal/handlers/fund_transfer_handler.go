@@ -38,6 +38,11 @@ func (fh *FundTransferHandler) HandleAdminToRetailer(w http.ResponseWriter, r *h
 	fh.handleTransfer(w, r, "admin to retailer", fh.fundTransferStore.AdminToRetailer)
 }
 
+// MD To MD Fund Transfer Handler
+func (fh *FundTransferHandler) HandleMDToMD(w http.ResponseWriter, r *http.Request) {
+	fh.handleTransfer(w, r, "md to md", fh.fundTransferStore.MDToMD)
+}
+
 // MD To Distributor Fund Transfer Handler
 func (fh *FundTransferHandler) HandleMDToDistributor(w http.ResponseWriter, r *http.Request) {
 	fh.handleTransfer(w, r, "md to distributor", fh.fundTransferStore.MDToDistributor)
@@ -46,6 +51,11 @@ func (fh *FundTransferHandler) HandleMDToDistributor(w http.ResponseWriter, r *h
 // MD To Retailer Fund Transfer Handler
 func (fh *FundTransferHandler) HandleMDToRetailer(w http.ResponseWriter, r *http.Request) {
 	fh.handleTransfer(w, r, "md to retailer", fh.fundTransferStore.MDToRetailer)
+}
+
+// Distributor To Retailer Fund Transfer Handler
+func (fh *FundTransferHandler) HandleDistributorToDistributor(w http.ResponseWriter, r *http.Request) {
+	fh.handleTransfer(w, r, "distributor to distributor", fh.fundTransferStore.DistributorToDistributor)
 }
 
 // Distributor To Retailer Fund Transfer Handler

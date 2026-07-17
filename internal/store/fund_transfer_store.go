@@ -26,8 +26,10 @@ type FundTransferStore interface {
 	AdminToDistributor(ft *models.FundTransferModel) error
 	AdminToRetailer(ft *models.FundTransferModel) error
 	MDToDistributor(ft *models.FundTransferModel) error
+	MDToMD(ft *models.FundTransferModel) error
 	MDToRetailer(ft *models.FundTransferModel) error
 	DistributorToRetailer(ft *models.FundTransferModel) error
+	DistributorToDistributor(ft *models.FundTransferModel) error
 	GetFundTransfersByTransfererID(transfererID string, p utils.QueryParams) ([]models.FundTransferModel, error)
 	GetFundTransfersByReceiverID(receiverID string, p utils.QueryParams) ([]models.FundTransferModel, error)
 	GetAllFundTransfers(p utils.QueryParams) ([]models.FundTransferModel, error)
@@ -48,6 +50,11 @@ func (fs *PostgresFundTransferStore) AdminToRetailer(ft *models.FundTransferMode
 	return fs.transfer(ft)
 }
 
+// MD To MD Fund Transfer
+func (fs *PostgresFundTransferStore) MDToMD(ft *models.FundTransferModel) error {
+	return fs.transfer(ft)
+}
+
 // MD To Distributor Fund Transfer
 func (fs *PostgresFundTransferStore) MDToDistributor(ft *models.FundTransferModel) error {
 	return fs.transfer(ft)
@@ -55,6 +62,11 @@ func (fs *PostgresFundTransferStore) MDToDistributor(ft *models.FundTransferMode
 
 // MD To Retailer Fund Transfer
 func (fs *PostgresFundTransferStore) MDToRetailer(ft *models.FundTransferModel) error {
+	return fs.transfer(ft)
+}
+
+// Distributor To Distributor Fund Transfer
+func (fs *PostgresFundTransferStore) DistributorToDistributor(ft *models.FundTransferModel) error {
 	return fs.transfer(ft)
 }
 
