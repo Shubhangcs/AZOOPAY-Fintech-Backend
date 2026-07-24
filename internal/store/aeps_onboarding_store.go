@@ -23,6 +23,12 @@ type PostgresAEPSOnboardingStore struct {
 	db *sql.DB
 }
 
+func NewAEPSOnboardingStore(db *sql.DB) *PostgresAEPSOnboardingStore {
+	return &PostgresAEPSOnboardingStore{
+		db,
+	}
+}
+
 func (pa *PostgresAEPSOnboardingStore) ApplyForAEPS(data *models.ApplyForAEPSRequestModel) error {
 	query := `
 		INSERT INTO aeps_applications(
@@ -156,7 +162,7 @@ func (pa *PostgresAEPSOnboardingStore) GetAEPSApplication(userId string) (*model
 			a.created_at,
 			a.updated_at,
 			u.retailer_aadhar_number,
-			u.retailer_pan_number
+			u.retailer_pan_number,
 			u.retailer_gender,
 			u.retailer_email,
 			u.retailer_address,
@@ -167,7 +173,7 @@ func (pa *PostgresAEPSOnboardingStore) GetAEPSApplication(userId string) (*model
 		FROM aeps_applications a
 		JOIN retailers u
 			ON a.retailer_id = u.retailer_id
-		WHERE a.user_id = $1;
+		WHERE a.retailer_id = $1;
 	`
 
 	var application models.AEPSApplicationResponseModel

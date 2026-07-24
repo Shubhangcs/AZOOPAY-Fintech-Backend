@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -84,6 +85,7 @@ func (ah *AEPSOnboardingHandler) HandleAEPSSignupMerchant(w http.ResponseWriter,
 
 	res, err := ah.AEPSOnboardingStore.GetAEPSApplication(userId)
 	if err != nil {
+		fmt.Println("error here")
 		utils.ServerError(w, ah.logger, "aeps signup merchant", err)
 		return
 	}
@@ -136,7 +138,7 @@ func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.AEPS
 			"latitude":  data.Latitude,
 			"longitude": data.Longitude,
 		},
-		res,
+		&res,
 	); err != nil {
 		return nil, err
 	}

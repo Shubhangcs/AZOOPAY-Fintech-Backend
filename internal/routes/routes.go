@@ -36,6 +36,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	apiDownRoutes(router, app)
 	statsRoutes(router, app)
 	dashboardRoutes(router, app)
+	aepsOnboardingRoutes(router, app)
 
 	return router
 }
@@ -398,7 +399,7 @@ func statsRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/retailer/{id}", app.StatsHandler.HandleGetRetailerStats)
 		r.Get("/distributor/{id}", app.StatsHandler.HandleGetDistributorStats)
 		r.Get("/md/{id}", app.StatsHandler.HandleGetMasterDistributorStats)
-		r.Get("/admin/total" , app.StatsHandler.HandleGetTotalStats)
+		r.Get("/admin/total", app.StatsHandler.HandleGetTotalStats)
 	})
 }
 
@@ -408,5 +409,18 @@ func apiDownRoutes(router *chi.Mux, app *app.Application) {
 
 		r.Get("/", app.ApiDownHandler.HandleGetAllServiceStatuses)
 		r.Patch("/{service_name}", app.ApiDownHandler.HandleUpdateServiceStatus)
+	})
+}
+
+func aepsOnboardingRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/aeps/onboarding", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
+		r.Post("/apply", app.AEPSOnboardingHandler.HandleApplyForAEPS)
+		r.Get("/app/check/status/{id}", app.AEPSOnboardingHandler.HandleCheckAEPSApplicationStatus)
+		r.Post("/app/change/status/{id}", app.AEPSOnboardingHandler.HandleChangeAEPSApplicationStatus)
+		r.Get("/signup/{id}", app.AEPSOnboardingHandler.HandleAEPSSignupMerchant)
+		r.Post("/check/ekyc/{id}", app.AEPSOnboardingHandler.HandleAEPSCheckMerchantEKYC)
+		r.Post("/bio/kyc/{id}", app.AEPSOnboardingHandler.HandleBiometricKYC)
 	})
 }
