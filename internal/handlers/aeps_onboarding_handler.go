@@ -116,6 +116,23 @@ func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.AEPS
 		data.RetailerGender = "T"
 	}
 
+	fmt.Println(map[string]any{
+		"mobile":      data.RetailerPhone,
+		"name":        data.RetailerName,
+		"gender":      data.RetailerGender,
+		"email":       data.RetailerEmail,
+		"pan":         data.RetailerPAN,
+		"aadhaar":     data.RetailerAadhaar,
+		"dateOfBirth": data.RetailerDateOfBirth,
+		"address": map[string]string{
+			"full":    data.RetailerAddress,
+			"city":    data.RetailerCity,
+			"pincode": data.RetailerPincode,
+		},
+		"latitude":  data.Latitude,
+		"longitude": data.Longitude,
+	})
+
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSSubMerchantSignup,
 		"token",
@@ -140,10 +157,12 @@ func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.AEPS
 		},
 		&res,
 	); err != nil {
+		fmt.Println(res)
 		return nil, err
 	}
 
 	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
+		fmt.Println(res)
 		return nil, errors.New(res.Message)
 	}
 
