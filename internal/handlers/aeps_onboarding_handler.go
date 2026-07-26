@@ -25,44 +25,23 @@ func NewAEPSOnboardingHandler(logger *slog.Logger, AEPSOnboardingStore store.AEP
 	}
 }
 
-func (ah *AEPSOnboardingHandler) HandleApplyForAEPS(w http.ResponseWriter, r *http.Request) {
-	var req models.ApplyForAEPSRequestModel
+func (ah *AEPSOnboardingHandler) HandleCreateAEPSApplication(w http.ResponseWriter, r *http.Request) {
+	var req models.CreateAEPSApplicationRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.BadRequest(w, ah.logger, "apply for aeps", err)
+		utils.BadRequest(w, ah.logger, "create aeps application", err)
 		return
 	}
 
-	if err := req.Validate(); err != nil {
-		utils.BadRequest(w, ah.logger, "apply for aeps", err)
+	if err := ah.AEPSOnboardingStore.CreateAEPSApplication(&req); err != nil {
+		utils.ServerError(w, ah.logger, "create aeps application", err)
 		return
 	}
 
-	if err := ah.AEPSOnboardingStore.ApplyForAEPS(&req); err != nil {
-		utils.ServerError(w, ah.logger, "apply for aeps", err)
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "AEPS application submitted successfully"})
-}
-
-func (ah *AEPSOnboardingHandler) HandleCheckAEPSApplicationStatus(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
-	if err != nil {
-		utils.BadRequest(w, ah.logger, "check aeps application status", err)
-		return
-	}
-
-	res, err := ah.AEPSOnboardingStore.CheckAEPSApplicationStatus(userId)
-	if err != nil {
-		utils.ServerError(w, ah.logger, "check aeps application status", err)
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "AEPS application status fetched successfully", "application": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps application created successfully"})
 }
 
 func (ah *AEPSOnboardingHandler) HandleChangeAEPSApplicationStatus(w http.ResponseWriter, r *http.Request) {
-	var req models.ApplyForAEPSRequestModel
+	var req models.ChangeAEPSApplicationStatusRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, ah.logger, "change aeps application status", err)
 		return
@@ -73,61 +52,133 @@ func (ah *AEPSOnboardingHandler) HandleChangeAEPSApplicationStatus(w http.Respon
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "AEPS application status updated successfully"})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps application status updated successfully"})
 }
 
-func (ah *AEPSOnboardingHandler) HandleAEPSSignupMerchant(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
+func (ah *AEPSOnboardingHandler) HandleSignupAEPSMerchant(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
-		utils.BadRequest(w, ah.logger, "aeps signup merchant", err)
+		utils.BadRequest(w, ah.logger, "signup aeps merchant", err)
 		return
 	}
 
-	res, err := ah.AEPSOnboardingStore.GetAEPSApplication(userId)
+	details, err := ah.AEPSOnboardingStore.GetAEPSApplicationByRetailerID(retailerId)
 	if err != nil {
-		fmt.Println("error here")
-		utils.ServerError(w, ah.logger, "aeps signup merchant", err)
+		utils.ServerError(w, ah.logger, "signup aeps merchant", err)
 		return
 	}
 
-	apiRes, err := aepsMerchantSignup(res)
+	apiRes, err := aepsMerchantSignup(details)
 	if err != nil {
-		utils.BadRequest(w, ah.logger, "aeps signup merchant", err)
+		utils.BadRequest(w, ah.logger, "signup aeps merchant", err)
 		return
 	}
 
-	if err := ah.AEPSOnboardingStore.SubMerchantAEPSSignup(userId, apiRes); err != nil {
-		utils.BadRequest(w, ah.logger, "aeps signup merchant", err)
+	if err := ah.AEPSOnboardingStore.CreateAEPSMerchant(retailerId, apiRes); err != nil {
+		utils.ServerError(w, ah.logger, "signup aeps merchant", err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "AEPS signup successfull", "api_response": apiRes})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps merchant signup successfull", "api_response": apiRes})
 }
 
-func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.AEPSOnboardingSubMerchantSignupSuccessResponseModel, error) {
-	var res models.AEPSOnboardingSubMerchantSignupSuccessResponseModel
+func (ah *AEPSOnboardingHandler) HandleCheckEKYCRequired(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "check ekyc required", err)
+		return
+	}
 
-	switch data.RetailerGender {
+	var bankDetails struct {
+		BankType string `json:"bank_type"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&bankDetails); err != nil {
+		utils.BadRequest(w, ah.logger, "check ekyc required", err)
+		return
+	}
+
+	details, err := ah.AEPSOnboardingStore.GetAEPSMerchantDetailsByRetailerID(retailerId)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "check ekyc required", err)
+		return
+	}
+
+	res, err := aepsCheckMerchantEKYC(details.SubMerchantID, bankDetails.BankType)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "check ekyc required", err)
+		return
+	}
+
+	if err := ah.AEPSOnboardingStore.UpdateAEPSMerchant(retailerId, res); err != nil {
+		utils.ServerError(w, ah.logger, "check ekyc required", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "ekyc check successfull", "api_response": res})
+}
+
+func (ah *AEPSOnboardingHandler) HandleBiometricKYC(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "biometric kyc", err)
+		return
+	}
+
+	var req struct {
+		Latitude      string                        `json:"latitude"`
+		Longitude     string                        `json:"longitude"`
+		BiometricData models.AEPSBiometricDataModel `json:"biometric_data"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ah.logger, "biometric kyc", err)
+		return
+	}
+
+	details, err := ah.AEPSOnboardingStore.GetAEPSMerchantDetailsByRetailerID(retailerId)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "biometric kyc", err)
+		return
+	}
+
+	res, err := aepsBiometricKYC(&req.BiometricData, details, req.Latitude, req.Longitude)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "biometric kyc", err)
+		return
+	}
+
+	if err := ah.AEPSOnboardingStore.UpdateAEPSMerchant(retailerId, res); err != nil {
+		utils.ServerError(w, ah.logger, "biometric kyc", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "biometric kyc updated successfully", "api_response": res})
+}
+
+func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.CreateAEPSMerchantResponseModel, error) {
+	var res models.CreateAEPSMerchantResponseModel
+
+	switch data.RetailerDetails.RetailerGender {
 	case "MALE":
-		data.RetailerGender = "M"
+		data.RetailerDetails.RetailerGender = "M"
 	case "FEMALE":
-		data.RetailerGender = "F"
+		data.RetailerDetails.RetailerGender = "F"
 	default:
-		data.RetailerGender = "T"
+		data.RetailerDetails.RetailerGender = "T"
 	}
 
 	fmt.Println(map[string]any{
-		"mobile":      data.RetailerPhone,
-		"name":        data.RetailerName,
-		"gender":      data.RetailerGender,
-		"email":       data.RetailerEmail,
-		"pan":         data.RetailerPAN,
-		"aadhaar":     data.RetailerAadhaar,
-		"dateOfBirth": data.RetailerDateOfBirth,
+		"mobile":      data.RetailerDetails.RetailerPhone,
+		"name":        data.RetailerDetails.RetailerName,
+		"gender":      data.RetailerDetails.RetailerGender,
+		"email":       data.RetailerDetails.RetailerEmail,
+		"pan":         data.RetailerDetails.RetailerPanNumber,
+		"aadhaar":     data.RetailerDetails.RetailerAadhaarNumber,
+		"dateOfBirth": data.RetailerDetails.RetailerDateOfBirth,
 		"address": map[string]string{
-			"full":    data.RetailerAddress,
-			"city":    data.RetailerCity,
-			"pincode": data.RetailerPincode,
+			"full":    data.RetailerDetails.RetailerFullAddress,
+			"city":    data.RetailerDetails.RetailerCity,
+			"pincode": data.RetailerDetails.RetailerPincode,
 		},
 		"latitude":  data.Latitude,
 		"longitude": data.Longitude,
@@ -140,17 +191,17 @@ func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.AEPS
 		"username",
 		utils.PayntricUsername,
 		map[string]any{
-			"mobile":      data.RetailerPhone,
-			"name":        data.RetailerName,
-			"gender":      data.RetailerGender,
-			"email":       data.RetailerEmail,
-			"pan":         data.RetailerPAN,
-			"aadhaar":     data.RetailerAadhaar,
-			"dateOfBirth": data.RetailerDateOfBirth,
+			"mobile":      data.RetailerDetails.RetailerPhone,
+			"name":        data.RetailerDetails.RetailerName,
+			"gender":      data.RetailerDetails.RetailerGender,
+			"email":       data.RetailerDetails.RetailerEmail,
+			"pan":         data.RetailerDetails.RetailerPanNumber,
+			"aadhaar":     data.RetailerDetails.RetailerAadhaarNumber,
+			"dateOfBirth": data.RetailerDetails.RetailerDateOfBirth,
 			"address": map[string]string{
-				"full":    data.RetailerAddress,
-				"city":    data.RetailerCity,
-				"pincode": data.RetailerPincode,
+				"full":    data.RetailerDetails.RetailerFullAddress,
+				"city":    data.RetailerDetails.RetailerCity,
+				"pincode": data.RetailerDetails.RetailerPincode,
 			},
 			"latitude":  data.Latitude,
 			"longitude": data.Longitude,
@@ -169,50 +220,14 @@ func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.AEPS
 	return &res, nil
 }
 
-func (ah *AEPSOnboardingHandler) HandleAEPSCheckMerchantEKYC(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
-	if err != nil {
-		utils.BadRequest(w, ah.logger, "aeps check merchant ekyc", err)
-		return
-	}
-
-	var BankDetails struct {
-		BankCode string `json:"bank_code"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&BankDetails); err != nil {
-		utils.BadRequest(w, ah.logger, "aeps check merchant ekyc", err)
-		return
-	}
-
-	subMerchantId, err := ah.AEPSOnboardingStore.GetSubMerchantIDForAEPSEKYCCheck(userId)
-	if err != nil {
-		utils.ServerError(w, ah.logger, "aeps check merchant ekyc", err)
-		return
-	}
-
-	res, err := aepsCheckMerchantEKYC(subMerchantId, BankDetails.BankCode)
-	if err != nil {
-		utils.BadRequest(w, ah.logger, "aeps check merchant ekyc", err)
-		return
-	}
-
-	if err := ah.AEPSOnboardingStore.MerchantAEPSEKYCCheck(userId, res); err != nil {
-		utils.ServerError(w, ah.logger, "aeps check merchant ekyc", err)
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "AEPS merchant eKyc check completed successfully", "api_response": res})
-}
-
-func aepsCheckMerchantEKYC(subMerchantId string, bankCode string) (*models.AEPSOnboardingeKycCheckResponseModel, error) {
+func aepsCheckMerchantEKYC(subMerchantId string, bankCode string) (*models.UpdateAEPSMerchantResponseModel, error) {
 	var reqJson = make(map[string]any)
 	reqJson["subMerchantId"] = subMerchantId
 	reqJson["spKey"] = "WAP"
 	if bankCode != "" {
 		reqJson["gw"] = bankCode
 	}
-	var res models.AEPSOnboardingeKycCheckResponseModel
+	var res models.UpdateAEPSMerchantResponseModel
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSMerchantEKYCStatusCheck,
 		"token",
@@ -232,45 +247,8 @@ func aepsCheckMerchantEKYC(subMerchantId string, bankCode string) (*models.AEPSO
 	return &res, nil
 }
 
-func (ah *AEPSOnboardingHandler) HandleBiometricKYC(w http.ResponseWriter, r *http.Request) {
-	userId, err := utils.ReadParamID(r)
-	if err != nil {
-		utils.BadRequest(w, ah.logger, "aeps biometric kyc", err)
-		return
-	}
-
-	var biometricData models.AEPSBiometricDataModel
-	if err := json.NewDecoder(r.Body).Decode(&biometricData); err != nil {
-		utils.BadRequest(w, ah.logger, "aeps biometric kyc", err)
-		return
-	}
-
-	var res models.AEPSOnboardingBiometricKYCRequestModel
-	res.BiometricData = biometricData
-	if err := ah.AEPSOnboardingStore.GetMerchantDetailsForBiometricKYC(userId, &res); err != nil {
-		utils.ServerError(w, ah.logger, "aeps biometric kyc", err)
-		return
-	}
-
-	apiRes, err := aepsBiometricKYC(&res)
-	if err != nil {
-		utils.BadRequest(w, ah.logger, "aeps biometric kyc", err)
-		return
-	}
-
-	if err := ah.AEPSOnboardingStore.MerchantAEPSEKYCCheck(userId, &models.AEPSOnboardingeKycCheckResponseModel{
-		EKYCStatus: apiRes.EKYCStatus,
-		EKYCAction: apiRes.EKYCAction,
-	}); err != nil {
-		utils.BadRequest(w, ah.logger, "aeps biometric kyc", err)
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "AEPS biometric verification completed", "api_response": apiRes})
-}
-
-func aepsBiometricKYC(data *models.AEPSOnboardingBiometricKYCRequestModel) (*models.AEPSOnboardingBiometricKYCResponseModel, error) {
-	var res models.AEPSOnboardingBiometricKYCResponseModel
+func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerchantDetailsResponseModel, lat, lon string) (*models.UpdateAEPSMerchantResponseModel, error) {
+	var res models.UpdateAEPSMerchantResponseModel
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSBiometricKYC,
 		"token",
@@ -280,11 +258,11 @@ func aepsBiometricKYC(data *models.AEPSOnboardingBiometricKYCRequestModel) (*mod
 		map[string]any{
 			"subMerchantId": data.SubMerchantID,
 			"referenceKey":  data.ReferenceKey,
-			"latitude":      data.Latitude,
-			"longitude":     data.Longitude,
+			"latitude":      lat,
+			"longitude":     lon,
 			"externalRef":   uuid.NewString(),
 			"captureType":   "FMR",
-			"biometricData": data.BiometricData,
+			"biometricData": bio,
 		},
 		&res,
 	); err != nil {

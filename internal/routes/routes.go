@@ -416,11 +416,11 @@ func aepsOnboardingRoutes(router *chi.Mux, app *app.Application) {
 	router.Route("/aeps/onboarding", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 
-		r.Post("/apply", app.AEPSOnboardingHandler.HandleApplyForAEPS)
-		r.Get("/app/check/status/{id}", app.AEPSOnboardingHandler.HandleCheckAEPSApplicationStatus)
+		r.Post("/apply", app.AEPSOnboardingHandler.HandleCreateAEPSApplication)
+		// r.Get("/app/check/status/{id}", app.AEPSOnboardingHandler.Handle)
 		r.Post("/app/change/status/{id}", app.AEPSOnboardingHandler.HandleChangeAEPSApplicationStatus)
-		r.Get("/signup/{id}", app.AEPSOnboardingHandler.HandleAEPSSignupMerchant)
-		r.Post("/check/ekyc/{id}", app.AEPSOnboardingHandler.HandleAEPSCheckMerchantEKYC)
+		r.Get("/signup/{id}", app.AEPSOnboardingHandler.HandleSignupAEPSMerchant)
+		r.Post("/check/ekyc/{id}", app.AEPSOnboardingHandler.HandleCheckEKYCRequired)
 		r.Post("/bio/kyc/{id}", app.AEPSOnboardingHandler.HandleBiometricKYC)
 	})
 }
