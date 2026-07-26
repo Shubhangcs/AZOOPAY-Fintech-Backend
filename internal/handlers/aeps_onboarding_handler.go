@@ -235,7 +235,7 @@ func aepsCheckMerchantEKYC(subMerchantId string, bankCode string) (*models.Updat
 		"username",
 		utils.PayntricUsername,
 		reqJson,
-		res,
+		&res,
 	); err != nil {
 		return nil, err
 	}
