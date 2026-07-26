@@ -307,7 +307,7 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 			"latitude":      lat,
 			"longitude":     lon,
 			"externalRef":   uuid.NewString(),
-			"captureType":   "FMR",
+			"captureType":   "finger",
 			"biometricData": biometricData,
 		},
 		&res,
