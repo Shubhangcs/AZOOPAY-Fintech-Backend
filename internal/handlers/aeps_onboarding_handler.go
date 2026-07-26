@@ -174,7 +174,19 @@ func (ah *AEPSOnboardingHandler) HandleGetAEPSApplicationByRetailerID(w http.Res
 }
 
 func (ah *AEPSOnboardingHandler) HandleGetAEPSMerchantDetails(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps merchant details", err)
+		return
+	}
 
+	res, err := ah.AEPSOnboardingStore.GetAEPSMerchantDetailsByRetailerID(retailerId)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get aeps application", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps merchant details fetched successfully", "merchants": res})
 }
 
 func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.CreateAEPSMerchantResponseModel, error) {
