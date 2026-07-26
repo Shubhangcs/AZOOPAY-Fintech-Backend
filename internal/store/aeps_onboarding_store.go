@@ -239,13 +239,13 @@ func (pa *PostgresAEPSOnboardingStore) CreateAEPSMerchant(retailerId string, dat
 func (pa *PostgresAEPSOnboardingStore) UpdateAEPSMerchant(retailerId string, data *models.UpdateAEPSMerchantResponseModel) error {
 	query := `
 		UPDATE aeps_merchant_details
-		SET ekyc_status = COALESCE(NULLIF($1 , '') , ekyc_status),
-			ekyc_action = COALESCE(NULLIF($2 , '') , ekyc_action),
-			reference_key = COALESCE(NULLIF($3 , '') , reference_key),
-			status = COALESCE(NULLIF($4 , '') , status),
-			is_face_auth_available = COALESCE(NULLIF($5 , '') , is_face_auth_available),
-			is_biometric_kyc_manditory = COALESCE(NULLIF($6 , '') , is_biometric_kyc_manditory),
-			bank_name = COALESCE(NULLIF($7 , '') , bank_name)
+		SET ekyc_status = COALESCE(NULLIF($1, ''), ekyc_status),
+    		ekyc_action = COALESCE(NULLIF($2, ''), ekyc_action),
+    		reference_key = COALESCE(NULLIF($3, ''), reference_key),
+    		status = COALESCE(NULLIF($4, ''), status),
+    		is_face_auth_available = COALESCE($5, is_face_auth_available),
+    		is_biometric_kyc_manditory = COALESCE($6, is_biometric_kyc_manditory),
+    		bank_name = COALESCE(NULLIF($7, ''), bank_name)
 		WHERE retailer_id = $8;
 	`
 
