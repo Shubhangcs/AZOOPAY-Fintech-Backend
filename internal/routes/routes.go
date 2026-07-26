@@ -422,7 +422,7 @@ func aepsOnboardingRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/check/ekyc/{id}", app.AEPSOnboardingHandler.HandleCheckEKYCRequired)
 		r.Post("/bio/kyc/{id}", app.AEPSOnboardingHandler.HandleBiometricKYC)
 		r.Get("/get/applications", app.AEPSOnboardingHandler.HandleGetAllAEPSApplications)
-		r.Get("/get/applicstion/{id}", app.AEPSOnboardingHandler.HandleGetAEPSApplicationByRetailerID)
+		r.Get("/get/application/{id}", app.AEPSOnboardingHandler.HandleGetAEPSApplicationByRetailerID)
 		r.Get("/get/merchant/{id}", app.AEPSOnboardingHandler.HandleGetAEPSMerchantDetails)
 	})
 }
