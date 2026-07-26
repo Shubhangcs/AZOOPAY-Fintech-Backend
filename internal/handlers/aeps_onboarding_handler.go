@@ -89,21 +89,13 @@ func (ah *AEPSOnboardingHandler) HandleCheckEKYCRequired(w http.ResponseWriter, 
 		return
 	}
 
-	var bankDetails struct {
-		BankType string `json:"bank_type"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&bankDetails); err != nil {
-		utils.BadRequest(w, ah.logger, "check ekyc required", err)
-		return
-	}
-
 	details, err := ah.AEPSOnboardingStore.GetAEPSMerchantDetailsByRetailerID(retailerId)
 	if err != nil {
 		utils.ServerError(w, ah.logger, "check ekyc required", err)
 		return
 	}
 
-	res, err := aepsCheckMerchantEKYC(details.SubMerchantID, bankDetails.BankType)
+	res, err := aepsCheckMerchantEKYC(details.SubMerchantID)
 	if err != nil {
 		utils.BadRequest(w, ah.logger, "check ekyc required", err)
 		return
@@ -153,6 +145,36 @@ func (ah *AEPSOnboardingHandler) HandleBiometricKYC(w http.ResponseWriter, r *ht
 	}
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "biometric kyc updated successfully", "api_response": res})
+}
+
+func (ah *AEPSOnboardingHandler) HandleGetAllAEPSApplications(w http.ResponseWriter, r *http.Request) {
+	res, err := ah.AEPSOnboardingStore.GetAllAEPSApplications()
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get all aeps applications", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "all aeps application fetched successfully", "applications": res})
+}
+
+func (ah *AEPSOnboardingHandler) HandleGetAEPSApplicationByRetailerID(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps application", err)
+		return
+	}
+
+	res, err := ah.AEPSOnboardingStore.GetAEPSApplicationByRetailerID(retailerId)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get aeps application", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps application fetched successfully", "application": res})
+}
+
+func (ah *AEPSOnboardingHandler) HandleGetAEPSMerchantDetails(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.CreateAEPSMerchantResponseModel, error) {
@@ -220,13 +242,10 @@ func aepsMerchantSignup(data *models.AEPSApplicationResponseModel) (*models.Crea
 	return &res, nil
 }
 
-func aepsCheckMerchantEKYC(subMerchantId string, bankCode string) (*models.UpdateAEPSMerchantResponseModel, error) {
+func aepsCheckMerchantEKYC(subMerchantId string) (*models.UpdateAEPSMerchantResponseModel, error) {
 	var reqJson = make(map[string]any)
 	reqJson["subMerchantId"] = subMerchantId
 	reqJson["spKey"] = "WAP"
-	if bankCode != "" {
-		reqJson["gw"] = bankCode
-	}
 	var res models.UpdateAEPSMerchantResponseModel
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSMerchantEKYCStatusCheck,
@@ -249,6 +268,33 @@ func aepsCheckMerchantEKYC(subMerchantId string, bankCode string) (*models.Updat
 
 func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerchantDetailsResponseModel, lat, lon string) (*models.UpdateAEPSMerchantResponseModel, error) {
 	var res models.UpdateAEPSMerchantResponseModel
+	biometricData := map[string]any{
+		"encryptedAadhaar": bio.EncryptedAadhaar,
+		"pidData":          bio.PIDData,
+		"pidDataType":      bio.PIDDataType,
+		"dc":               bio.DeviceCode,
+		"dpId":             bio.DeviceProviderID,
+		"rdsId":            bio.RegisteredDevicesServiceID,
+		"rdsVer":           bio.RegisteredDeviceServiceVersion,
+		"mi":               bio.ModelIdentifier,
+		"mc":               bio.ModelCertificationCode,
+		"ci":               bio.ModelCertificateExpiryDate,
+		"sessionKey":       bio.SessionKey,
+		"hmac":             bio.Hmac,
+		"srno":             bio.SerialNumber,
+		"sysid":            bio.SystemIdentifier,
+		"ts":               bio.BiometricTimestamp,
+		"nmPoints":         bio.NmPoints,
+		"fCount":           bio.NumberOfFingerprintsCaptured,
+		"fType":            bio.FingerType,
+		"iCount":           bio.NumberOfIrisScanCaptured,
+		"iType":            bio.IrisType,
+		"pCount":           bio.NumberOfPhotosCaptured,
+		"pType":            bio.PhotoType,
+		"qScore":           bio.QualityScore,
+		"errCode":          bio.ErrorCode,
+		"errInfo":          bio.ErrorInfo,
+	}
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSBiometricKYC,
 		"token",
@@ -262,7 +308,7 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 			"longitude":     lon,
 			"externalRef":   uuid.NewString(),
 			"captureType":   "FMR",
-			"biometricData": bio,
+			"biometricData": biometricData,
 		},
 		&res,
 	); err != nil {
