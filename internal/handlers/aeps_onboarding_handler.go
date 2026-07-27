@@ -307,6 +307,24 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 		"errCode":          bio.ErrorCode,
 		"errInfo":          bio.ErrorInfo,
 	}
+
+	payload := map[string]any{
+		"subMerchantId": data.SubMerchantID,
+		"referenceKey":  data.ReferenceKey,
+		"latitude":      lat,
+		"longitude":     lon,
+		"externalRef":   uuid.NewString(),
+		"captureType":   "finger",
+		"biometricData": biometricData,
+	}
+
+	jsonBytes, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		fmt.Println("marshal error:", err)
+		return nil, err
+	}
+	fmt.Println(string(jsonBytes))
+	
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSBiometricKYC,
 		"token",
