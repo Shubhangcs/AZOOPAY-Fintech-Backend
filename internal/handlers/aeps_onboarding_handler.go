@@ -139,10 +139,10 @@ func (ah *AEPSOnboardingHandler) HandleBiometricKYC(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := ah.AEPSOnboardingStore.UpdateAEPSMerchant(retailerId, res); err != nil {
-		utils.ServerError(w, ah.logger, "biometric kyc", err)
-		return
-	}
+	// if err := ah.AEPSOnboardingStore.UpdateAEPSMerchant(retailerId, res); err != nil {
+	// 	utils.ServerError(w, ah.logger, "biometric kyc", err)
+	// 	return
+	// }
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "biometric kyc updated successfully", "api_response": res})
 }
@@ -324,7 +324,7 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 		return nil, err
 	}
 	fmt.Println(string(jsonBytes))
-	
+
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSBiometricKYC,
 		"token",
@@ -343,10 +343,6 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 		&res,
 	); err != nil {
 		return nil, err
-	}
-
-	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
-		return nil, errors.New(res.Message)
 	}
 
 	return &res, nil
