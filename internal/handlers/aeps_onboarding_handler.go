@@ -119,6 +119,7 @@ func (ah *AEPSOnboardingHandler) HandleBiometricKYC(w http.ResponseWriter, r *ht
 	var req struct {
 		Latitude      string                        `json:"latitude"`
 		Longitude     string                        `json:"longitude"`
+		Aadhaar       string                        `json:"aadhaar"`
 		BiometricData models.AEPSBiometricDataModel `json:"biometric_data"`
 	}
 
@@ -133,16 +134,16 @@ func (ah *AEPSOnboardingHandler) HandleBiometricKYC(w http.ResponseWriter, r *ht
 		return
 	}
 
-	res, err := aepsBiometricKYC(&req.BiometricData, details, req.Latitude, req.Longitude)
+	res, err := aepsBiometricKYC(&req.BiometricData, details, req.Latitude, req.Longitude, req.Aadhaar)
 	if err != nil {
 		utils.BadRequest(w, ah.logger, "biometric kyc", err)
 		return
 	}
 
-	// if err := ah.AEPSOnboardingStore.UpdateAEPSMerchant(retailerId, res); err != nil {
-	// 	utils.ServerError(w, ah.logger, "biometric kyc", err)
-	// 	return
-	// }
+	if err := ah.AEPSOnboardingStore.UpdateAEPSMerchant(retailerId, res); err != nil {
+		utils.ServerError(w, ah.logger, "biometric kyc", err)
+		return
+	}
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "biometric kyc updated successfully", "api_response": res})
 }
@@ -278,7 +279,7 @@ func aepsCheckMerchantEKYC(subMerchantId string) (*models.UpdateAEPSMerchantResp
 	return &res, nil
 }
 
-func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerchantDetailsResponseModel, lat, lon string) (*models.UpdateAEPSMerchantResponseModel, error) {
+func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerchantDetailsResponseModel, lat, lon, aadhaar string) (*models.UpdateAEPSMerchantResponseModel, error) {
 	var res models.UpdateAEPSMerchantResponseModel
 	biometricData := map[string]any{
 		"encryptedAadhaar": bio.EncryptedAadhaar,
@@ -313,6 +314,7 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 		"referenceKey":  data.ReferenceKey,
 		"latitude":      lat,
 		"longitude":     lon,
+		"aadhaar":       aadhaar,
 		"externalRef":   uuid.NewString(),
 		"captureType":   "finger",
 		"biometricData": biometricData,
@@ -326,7 +328,8 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 	fmt.Println(string(jsonBytes))
 
 	if err := utils.PostRequest2(
-		utils.PayntricAPI+utils.AEPSBiometricKYC,
+		// utils.PayntricAPI+utils.AEPSBiometricKYC,
+		`http://13.200.162.145:8002/api/jcentrix/v1/submerchant/aeps/biometric-kyc`,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
@@ -336,6 +339,7 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 			"referenceKey":  data.ReferenceKey,
 			"latitude":      lat,
 			"longitude":     lon,
+			"aadhaar":       aadhaar,
 			"externalRef":   uuid.NewString(),
 			"captureType":   "finger",
 			"biometricData": biometricData,
@@ -343,6 +347,10 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 		&res,
 	); err != nil {
 		return nil, err
+	}
+
+	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
+		return nil, errors.New(res.Message)
 	}
 
 	return &res, nil
