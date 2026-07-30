@@ -73,6 +73,7 @@ type UpdateAEPSMerchantResponseModel struct {
 	ReferenceKey string `json:"referenceKey,omitempty"`
 	Data         struct {
 		Status                  string `json:"status"`
+		PidOptionWadh           string `json:"pidOptionWadh"`
 		IsFaceAuthAvailable     bool   `json:"isFaceAuthAvailable,omitempty"`
 		IsBiometricKycManditory bool   `json:"isBiometricKycManditory,omitempty"`
 		BankName                string `json:"bankName"`
@@ -94,4 +95,5 @@ type AEPSMerchantDetailsResponseModel struct {
 	IsBiometricKycManditory bool   `json:"is_biometric_kyc_manditory"`
 	BankName                string `json:"bank_name"`
 	IsMerchantBlocked       bool   `json:"is_merchant_blocked"`
+	PidOptionWadh           string `json:"pid_option_wadh"`
 }

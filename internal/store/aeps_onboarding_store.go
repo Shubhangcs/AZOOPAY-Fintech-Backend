@@ -164,6 +164,7 @@ func (pa *PostgresAEPSOnboardingStore) GetAllAEPSApplications() ([]models.AEPSAp
 	if err != nil {
 		return nil, err
 	}
+	defer dbres.Close()
 
 	var res models.AEPSApplicationResponseModel
 	var resList []models.AEPSApplicationResponseModel
@@ -245,8 +246,9 @@ func (pa *PostgresAEPSOnboardingStore) UpdateAEPSMerchant(retailerId string, dat
     		status = COALESCE(NULLIF($4, ''), status),
     		is_face_auth_available = COALESCE($5, is_face_auth_available),
     		is_biometric_kyc_manditory = COALESCE($6, is_biometric_kyc_manditory),
-    		bank_name = COALESCE(NULLIF($7, ''), bank_name)
-		WHERE retailer_id = $8;
+    		bank_name = COALESCE(NULLIF($7, ''), bank_name),
+			pid_option_wadh = COALESCE(NULLIF($8 , '') , pid_option_wadh)
+		WHERE retailer_id = $9;
 	`
 
 	res, err := pa.db.Exec(
@@ -258,6 +260,7 @@ func (pa *PostgresAEPSOnboardingStore) UpdateAEPSMerchant(retailerId string, dat
 		data.Data.IsFaceAuthAvailable,
 		data.Data.IsBiometricKycManditory,
 		data.Data.BankName,
+		data.Data.PidOptionWadh,
 		retailerId,
 	)
 
@@ -284,7 +287,8 @@ func (pa *PostgresAEPSOnboardingStore) GetAEPSMerchantDetailsByRetailerID(retail
 			is_face_auth_available,
 			is_biometric_kyc_manditory,
 			bank_name,
-			is_merchant_blocked
+			is_merchant_blocked,
+			pid_option_wadh
 		FROM aeps_merchant_details
 		WHERE retailer_id=$1;
 	`
@@ -308,6 +312,7 @@ func (pa *PostgresAEPSOnboardingStore) GetAEPSMerchantDetailsByRetailerID(retail
 		&res.IsBiometricKycManditory,
 		&res.BankName,
 		&res.IsMerchantBlocked,
+		&res.PidOptionWadh,
 	); err != nil {
 		return nil, err
 	}
