@@ -259,6 +259,7 @@ func aepsCheckMerchantEKYC(subMerchantId string) (*models.UpdateAEPSMerchantResp
 	var reqJson = make(map[string]any)
 	reqJson["subMerchantId"] = subMerchantId
 	reqJson["spKey"] = "WAP"
+	reqJson["gw"] = "JA"
 	var res models.UpdateAEPSMerchantResponseModel
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSMerchantEKYCStatusCheck,
