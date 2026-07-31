@@ -316,7 +316,7 @@ func (eh *ElectricityBillHandler) HandleFetchElectricityBill(w http.ResponseWrit
 
 	var resp models.ElectricityBillFetchResponse
 	if err := utils.PostRequest(
-		utils.RechargeKitAPI1+utils.ElectricityBillFetch,
+		utils.RechargeKitVerifyAPI+utils.ElectricityBillFetch,
 		"Authorization",
 		"Bearer "+utils.RechargeKitAPIToken,
 		map[string]any{
