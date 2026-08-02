@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -132,11 +133,9 @@ func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.
 		return
 	}
 
-	
-	
-	
-	
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "daily login check successfull", "response": res})
+	fmt.Println(res)
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "daily login check successfull"})
 }
 
 func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyLoginResponseModel, error) {
