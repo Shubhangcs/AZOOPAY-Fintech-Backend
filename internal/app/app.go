@@ -100,7 +100,7 @@ func NewApplication() (*Application, error) {
 	statsHandler := handlers.NewStatsHandler(statsStore, logger)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardStore, logger)
 	aepsOnboardingHandler := handlers.NewAEPSOnboardingHandler(logger, aepsOnboardingStore)
-	aepsHandler := handlers.NewAEPSHandler(aepsStore)
+	aepsHandler := handlers.NewAEPSHandler(aepsStore, logger)
 
 	return &Application{
 		Logger:                   logger,
