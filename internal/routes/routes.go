@@ -433,5 +433,9 @@ func aepsRoutes(router *chi.Mux, app *app.Application) {
 		r.Use(middlewares.AuthorizationMiddleware)
 
 		r.Get("/getbanks/{id}", app.AEPSHandler.GetAEPSBanks)
+		r.Get("/check/dailylogin/{id}", app.AEPSHandler.CheckAEPSDailyLoginStatus)
+		r.Post("/dailylogin/{id}", app.AEPSHandler.DailyLogin)
+		r.Post("/ministatement/{id}", app.AEPSHandler.GetMiniStatement)
+		r.Post("/balance/check/{id}", app.AEPSHandler.GetBalance)
 	})
 }
