@@ -132,7 +132,7 @@ func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "check daily login detailes fetched successfully", "details": *res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "daily login check successfull", "response": res})
 }
 
 func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyLoginResponseModel, error) {
