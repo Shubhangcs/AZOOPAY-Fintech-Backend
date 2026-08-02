@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -149,6 +150,8 @@ func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyL
 	); err != nil {
 		return nil, err
 	}
+
+	fmt.Println(res)
 
 	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
 		return nil, errors.New(res.Message)
