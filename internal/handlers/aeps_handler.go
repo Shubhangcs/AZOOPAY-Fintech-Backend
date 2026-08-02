@@ -138,12 +138,13 @@ func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.
 func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyLoginResponseModel, error) {
 	var res models.AEPSDailyLoginResponseModel
 
-	if err := utils.GetRequest2(
+	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSOutletLoginStatus+"?outletId="+req.OutletID,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
 		utils.PayntricUsername,
+		map[string]any{},
 		&res,
 	); err != nil {
 		return nil, err
