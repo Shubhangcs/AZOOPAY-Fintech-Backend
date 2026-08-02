@@ -39,7 +39,7 @@ func (ah *AEPSHandler) GetAEPSBanks(w http.ResponseWriter, r *http.Request) {
 	var res []models.BankModel
 
 	if err := utils.GetRequest2(
-		utils.PayntricAPI+utils.AEPSBankList+`?outletid=`+data.OutletID,
+		utils.PayntricAPI+utils.AEPSBankList+`?outletId=`+data.OutletID,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
