@@ -25,20 +25,26 @@ func NewAEPSHandler(AEPSStore store.AEPSStore, logger *slog.Logger) *AEPSHandler
 }
 
 func (ah *AEPSHandler) GetAEPSBanks(w http.ResponseWriter, r *http.Request) {
-	outletId, err := utils.ReadParamID(r)
+	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, ah.logger, "get aeps banks", err)
 		return
 	}
-	var res any
+
+	data, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(retailerId)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get aeps banks", err)
+		return
+	}
+	var res []models.BankModel
 
 	if err := utils.GetRequest2(
-		utils.PayntricAPI+utils.AEPSBankList+`?outletid=`+outletId,
+		utils.PayntricAPI+utils.AEPSBankList+`?outletid=`+data.OutletID,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
 		utils.PayntricUsername,
-		&res,
+		res,
 	); err != nil {
 		utils.BadRequest(w, ah.logger, "get aeps banks", err)
 		return
@@ -50,21 +56,25 @@ func (ah *AEPSHandler) GetAEPSBanks(w http.ResponseWriter, r *http.Request) {
 func (ah *AEPSHandler) DailyLogin(w http.ResponseWriter, r *http.Request) {
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
+		utils.BadRequest(w, ah.logger, "aeps daily login", err)
 		return
 	}
 
 	var req models.AEPSDailyLoginRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ah.logger, "aeps daily login", err)
 		return
 	}
 
 	data, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(retailerId)
 	if err != nil {
+		utils.ServerError(w, ah.logger, "aeps daily login", err)
 		return
 	}
 
 	res, err := aepsDailyLogin(data, &req)
 	if err != nil {
+		utils.BadRequest(w, ah.logger, "aeps daily login", err)
 		return
 	}
 
@@ -106,21 +116,23 @@ func aepsDailyLogin(req *models.AEPSDetailsModel, bd *models.AEPSDailyLoginReque
 func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.Request) {
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
+		utils.BadRequest(w, ah.logger, "check aeps daily login", err)
 		return
 	}
 
 	data, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(retailerId)
 	if err != nil {
+		utils.ServerError(w, ah.logger, "check aeps daily login", err)
 		return
 	}
 
 	res, err := checkAEPSDailyLoginStatus(data)
 	if err != nil {
+		utils.BadRequest(w, ah.logger, "check aeps daily login", err)
 		return
 	}
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "check daily login detailes fetched successfully", "details": res})
-
 }
 
 func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyLoginResponseModel, error) {
@@ -147,17 +159,20 @@ func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyL
 func (ah *AEPSHandler) GetMiniStatement(w http.ResponseWriter, r *http.Request) {
 	var req models.AEPSMiniStatementRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ah.logger, "aeps mini statement", err)
 		return
 	}
 	req.RequestID = uuid.NewString()
 
 	data, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(req.RetailerID)
 	if err != nil {
+		utils.ServerError(w, ah.logger, "aeps mini statement", err)
 		return
 	}
 
 	res, err := getMiniStatement(data, &req)
 	if err != nil {
+		utils.BadRequest(w, ah.logger, "aeps mini statement", err)
 		return
 	}
 
@@ -201,17 +216,20 @@ func getMiniStatement(retailerData *models.AEPSDetailsModel, req *models.AEPSMin
 func (ah *AEPSHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 	var req models.AEPSBalanceEnquiryRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ah.logger, "aeps balance enquiry", err)
 		return
 	}
 	req.RequestID = uuid.NewString()
 
 	data, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(req.RetailerID)
 	if err != nil {
+		utils.ServerError(w, ah.logger, "aeps balance enquiry", err)
 		return
 	}
 
 	res, err := getBalance(data, &req)
 	if err != nil {
+		utils.BadRequest(w, ah.logger, "aeps balance enquiry", err)
 		return
 	}
 
