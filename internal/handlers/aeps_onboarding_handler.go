@@ -259,7 +259,7 @@ func aepsCheckMerchantEKYC(subMerchantId string) (*models.UpdateAEPSMerchantResp
 	var reqJson = make(map[string]any)
 	reqJson["subMerchantId"] = subMerchantId
 	reqJson["spKey"] = "WAP"
-	reqJson["gw"] = "JA"
+	// reqJson["gw"] = "JA"
 	var res models.UpdateAEPSMerchantResponseModel
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSMerchantEKYCStatusCheck,
@@ -310,27 +310,8 @@ func aepsBiometricKYC(bio *models.AEPSBiometricDataModel, data *models.AEPSMerch
 		"errInfo":          bio.ErrorInfo,
 	}
 
-	payload := map[string]any{
-		"subMerchantId": data.SubMerchantID,
-		"referenceKey":  data.ReferenceKey,
-		"latitude":      lat,
-		"longitude":     lon,
-		"aadhaar":       aadhaar,
-		"externalRef":   uuid.NewString(),
-		"captureType":   "finger",
-		"biometricData": biometricData,
-	}
-
-	jsonBytes, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
-		fmt.Println("marshal error:", err)
-		return nil, err
-	}
-	fmt.Println(string(jsonBytes))
-
 	if err := utils.PostRequest2(
-		// utils.PayntricAPI+utils.AEPSBiometricKYC,
-		`http://13.200.162.145:8002/api/jcentrix/v1/submerchant/aeps/biometric-kyc`,
+		utils.PayntricAPI+utils.AEPSBiometricKYC,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
