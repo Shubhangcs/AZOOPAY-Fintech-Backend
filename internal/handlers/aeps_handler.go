@@ -160,6 +160,7 @@ func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyL
 		fmt.Println("------------")
 		fmt.Println("here")
 		fmt.Println("------------")
+		fmt.Println(res)
 		return nil, errors.New(res.Message)
 	}
 
