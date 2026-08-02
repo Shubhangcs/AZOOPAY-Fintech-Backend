@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -131,6 +132,8 @@ func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.
 		utils.BadRequest(w, ah.logger, "check aeps daily login", err)
 		return
 	}
+
+	fmt.Println(res)
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "check daily login detailes fetched successfully", "details": res})
 }
