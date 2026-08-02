@@ -267,7 +267,7 @@ type AEPSTransactionOTPResponseModel struct {
 }
 
 type AEPSBankModel struct {
-	BankID                   string `json:"bankId"`
+	BankID                   int    `json:"bankId"`
 	BankName                 string `json:"name"`
 	BankIdentificationNumber string `json:"iin"`
 	AEPSEnabled              bool   `json:"aepsEnabled"`
