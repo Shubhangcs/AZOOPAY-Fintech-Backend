@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -13,20 +14,23 @@ import (
 
 type AEPSHandler struct {
 	AEPSStore store.AEPSStore
+	logger    *slog.Logger
 }
 
-func NewAEPSHandler(AEPSStore store.AEPSStore) *AEPSHandler {
+func NewAEPSHandler(AEPSStore store.AEPSStore, logger *slog.Logger) *AEPSHandler {
 	return &AEPSHandler{
 		AEPSStore,
+		logger,
 	}
 }
 
 func (ah *AEPSHandler) GetAEPSBanks(w http.ResponseWriter, r *http.Request) {
 	outletId, err := utils.ReadParamID(r)
 	if err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps banks", err)
 		return
 	}
-	var res []models.AEPSBankModel
+	var res any
 
 	if err := utils.GetRequest2(
 		utils.PayntricAPI+utils.AEPSBankList+`?outletid=`+outletId,
@@ -36,6 +40,7 @@ func (ah *AEPSHandler) GetAEPSBanks(w http.ResponseWriter, r *http.Request) {
 		utils.PayntricUsername,
 		&res,
 	); err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps banks", err)
 		return
 	}
 
