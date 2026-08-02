@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -116,12 +117,18 @@ func aepsDailyLogin(req *models.AEPSDetailsModel, bd *models.AEPSDailyLoginReque
 func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.Request) {
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
+		fmt.Println("------------")
+		fmt.Println("header")
+		fmt.Println("------------")
 		utils.BadRequest(w, ah.logger, "check aeps daily login", err)
 		return
 	}
 
 	data, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(retailerId)
 	if err != nil {
+		fmt.Println("------------")
+		fmt.Println("db")
+		fmt.Println("------------")
 		utils.ServerError(w, ah.logger, "check aeps daily login", err)
 		return
 	}
@@ -150,6 +157,9 @@ func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyL
 	}
 
 	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
+		fmt.Println("------------")
+		fmt.Println("here")
+		fmt.Println("------------")
 		return nil, errors.New(res.Message)
 	}
 
