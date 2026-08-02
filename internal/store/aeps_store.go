@@ -23,7 +23,7 @@ func NewPostgresAEPSStore(db *sql.DB) *PostgresAEPSStore {
 func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*models.AEPSDetailsModel, error) {
 	query := `
 		SELECT
-			r.retailer_aadhaar_number,
+			r.retailer_aadhar_number,
 			m.outlet_id
 		FROM retailers r
 		JOIN aeps_merchant_details m ON m.retailer_id = r.retailer_id
