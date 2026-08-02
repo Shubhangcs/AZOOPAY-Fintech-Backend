@@ -34,7 +34,7 @@ func (ah *AEPSHandler) GetAEPSBanks(w http.ResponseWriter, r *http.Request) {
 		utils.PayntricAPIToken,
 		"username",
 		utils.PayntricUsername,
-		res,
+		&res,
 	); err != nil {
 		return
 	}
