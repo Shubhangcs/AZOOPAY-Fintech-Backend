@@ -117,18 +117,12 @@ func aepsDailyLogin(req *models.AEPSDetailsModel, bd *models.AEPSDailyLoginReque
 func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.Request) {
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
-		fmt.Println("------------")
-		fmt.Println("header")
-		fmt.Println("------------")
 		utils.BadRequest(w, ah.logger, "check aeps daily login", err)
 		return
 	}
 
 	data, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(retailerId)
 	if err != nil {
-		fmt.Println("------------")
-		fmt.Println("db")
-		fmt.Println("------------")
 		utils.ServerError(w, ah.logger, "check aeps daily login", err)
 		return
 	}
@@ -146,7 +140,7 @@ func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyL
 	var res models.AEPSDailyLoginResponseModel
 
 	if err := utils.GetRequest2(
-		utils.PayntricAPI+utils.AEPSOutletLoginStatus+"?outletid="+req.OutletID,
+		utils.PayntricAPI+utils.AEPSOutletLoginStatus+"?outletId="+req.OutletID,
 		"token",
 		utils.PayntricAPIToken,
 		"username",
@@ -157,10 +151,6 @@ func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyL
 	}
 
 	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
-		fmt.Println("------------")
-		fmt.Println("here")
-		fmt.Println("------------")
-		fmt.Println(res)
 		return nil, errors.New(res.Message)
 	}
 
