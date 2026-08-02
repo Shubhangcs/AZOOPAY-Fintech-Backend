@@ -37,6 +37,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	statsRoutes(router, app)
 	dashboardRoutes(router, app)
 	aepsOnboardingRoutes(router, app)
+	aepsRoutes(router, app)
 
 	return router
 }
@@ -424,5 +425,13 @@ func aepsOnboardingRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/get/applications", app.AEPSOnboardingHandler.HandleGetAllAEPSApplications)
 		r.Get("/get/application/{id}", app.AEPSOnboardingHandler.HandleGetAEPSApplicationByRetailerID)
 		r.Get("/get/merchant/{id}", app.AEPSOnboardingHandler.HandleGetAEPSMerchantDetails)
+	})
+}
+
+func aepsRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/aeps", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
+		r.Get("/getbanks/{id}", app.AEPSHandler.GetAEPSBanks)
 	})
 }
