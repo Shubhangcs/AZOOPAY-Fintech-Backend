@@ -63,7 +63,7 @@ type AEPSMiniStatementResponseModel struct {
 	AccountNumber       string  `json:"accountNumber"`
 	TransactionMode     string  `json:"transactionMode"`
 	BankAccountBalance  float64 `json:"bankAccountBalance"`
-	IsOnusTransaction   string  `json:"isOnusTxn"`
+	IsOnusTransaction   bool  `json:"isOnusTxn"`
 	ExternalReferenceID string  `json:"externalRef"`
 	MiniStatement       []any   `json:"miniStatemenet"`
 	CommisionAmount     float64  `json:"commisionAmount"`
