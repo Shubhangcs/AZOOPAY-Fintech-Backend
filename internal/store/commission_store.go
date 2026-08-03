@@ -22,6 +22,7 @@ type CommisionStore interface {
 	GetAllCommisions(limit, offset int) ([]models.CommisionModel, error)
 	GetCommisionByUserIDServiceAndAmount(userID, service string, amount float64) (*models.CommisionModel, error)
 	GetDefaultCommision(amount float64) *models.CommisionModel
+	GetAEPSCommision(amount float64) *models.CommisionModel
 }
 
 // Create Commision
@@ -187,4 +188,65 @@ func (cs *PostgresCommisionStore) GetDefaultCommision(amount float64) *models.Co
 		DistributorCommision:       totalCommision * 0.20,
 		RetailerCommision:          totalCommision * 0.50,
 	}
+}
+
+func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.CommisionModel {
+	if amount > 100 && amount < 500 {
+		return &models.CommisionModel{
+			TotalCommision:             0,
+			AdminCommision:             0,
+			MasterDistributorCommision: 0,
+			DistributorCommision:       0,
+			RetailerCommision:          0,
+		}
+	} else if amount > 500 && amount < 1000 {
+		return &models.CommisionModel{
+			TotalCommision:             0,
+			AdminCommision:             0,
+			MasterDistributorCommision: 0,
+			DistributorCommision:       0,
+			RetailerCommision:          2,
+		}
+	} else if amount > 1000 && amount < 2000 {
+		return &models.CommisionModel{
+			TotalCommision:             0,
+			AdminCommision:             0,
+			MasterDistributorCommision: 0,
+			DistributorCommision:       0.5,
+			RetailerCommision:          3,
+		}
+	} else if amount > 2000 && amount < 3000 {
+		return &models.CommisionModel{
+			TotalCommision:             0,
+			AdminCommision:             0,
+			MasterDistributorCommision: 0,
+			DistributorCommision:       0.5,
+			RetailerCommision:          4,
+		}
+	} else if amount > 3000 && amount < 5000 {
+		return &models.CommisionModel{
+			TotalCommision:             0,
+			AdminCommision:             0,
+			MasterDistributorCommision: 0,
+			DistributorCommision:       0.5,
+			RetailerCommision:          7,
+		}
+	} else if amount > 5000 && amount < 7000 {
+		return &models.CommisionModel{
+			TotalCommision:             0,
+			AdminCommision:             0,
+			MasterDistributorCommision: 0,
+			DistributorCommision:       0.75,
+			RetailerCommision:          8,
+		}
+	} else if amount > 7000 && amount <= 10000 {
+		return &models.CommisionModel{
+			TotalCommision:             0,
+			AdminCommision:             0,
+			MasterDistributorCommision: 0,
+			DistributorCommision:       1,
+			RetailerCommision:          10,
+		}
+	}
+	return nil
 }

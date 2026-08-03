@@ -243,3 +243,37 @@ func getRetailerDetails(
 	}
 	return rc, nil
 }
+
+type aepsTdsTransaction struct {
+	TransactionID string
+	TDSAmount     float64
+	UserID        string
+	UserType      string
+}
+
+func tdsAepsTx(tx *sql.Tx, txn *aepsTdsTransaction) error {
+	query := `
+		INSERT INTO aeps_tds(
+			transaction_id,
+			tds_amount,
+			user_id,
+			user_type
+		) VALUES (
+			$1 , $2 , $3 , $4 
+		);
+	`
+
+	res, err := tx.Exec(
+		query,
+		txn.TransactionID,
+		txn.TDSAmount,
+		txn.UserID,
+		txn.UserType,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}

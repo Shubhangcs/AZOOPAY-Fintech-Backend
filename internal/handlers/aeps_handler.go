@@ -276,3 +276,77 @@ func getBalance(retailerData *models.AEPSDetailsModel, req *models.AEPSBalanceEn
 
 	return &res, nil
 }
+
+func (ah *AEPSHandler) CashWithdrawal(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "aeps cash withdrawal", err)
+		return
+	}
+
+	var req models.AEPSCashWithdrawalRequestModel
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ah.logger, "aeps cash withdrawal", err)
+		return
+	}
+	req.RequestID = uuid.NewString()
+
+	merd, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(retailerId)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "aeps cash withdrawal", err)
+		return
+	}
+
+	aepsTransactionId, err := ah.AEPSStore.InitilizeCashWithdrawal(retailerId, merd, &req)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "aeps cash withdrawal", err)
+		return
+	}
+
+	apiRes, err := cashWithdrawal(merd, &req)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "aeps cash withdrawal", err)
+		return
+	}
+
+	if err := ah.AEPSStore.FinilizeCashWithdrawal(aepsTransactionId, apiRes); err != nil {
+		utils.ServerError(w, ah.logger, "aeps cash withdrawal", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cash withdrawal successfull", "res": apiRes})
+}
+
+func cashWithdrawal(merchantData *models.AEPSDetailsModel, req *models.AEPSCashWithdrawalRequestModel) (*models.AEPSCashWithdrawalResponseModel, error) {
+	var res models.AEPSCashWithdrawalResponseModel
+
+	if err := utils.PostRequest2(
+		utils.PayntricAPI+utils.AEPSCashWithdrawal,
+		"token",
+		utils.PayntricAPIToken,
+		"username",
+		utils.PayntricUsername,
+		map[string]any{
+			"requestId":     req.RequestID,
+			"outletId":      merchantData.OutletID,
+			"bankiin":       req.BankIdentificationNumber,
+			"mobile":        req.Mobile,
+			"amount":        req.Amount,
+			"latitude":      req.Latitude,
+			"longitude":     req.Longitude,
+			"customerName":  req.CustomerName,
+			"captureType":   "FINGER",
+			"aadhaar":       req.Aadhaar,
+			"biometricData": req.BiometricData,
+		},
+		&res,
+	); err != nil {
+		return nil, err
+	}
+
+	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
+		return nil, errors.New(res.Message)
+	}
+
+	return &res, nil
+}

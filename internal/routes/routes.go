@@ -437,5 +437,6 @@ func aepsRoutes(router *chi.Mux, app *app.Application) {
 		r.Post("/dailylogin/{id}", app.AEPSHandler.DailyLogin)
 		r.Post("/ministatement/{id}", app.AEPSHandler.GetMiniStatement)
 		r.Post("/balance/check/{id}", app.AEPSHandler.GetBalance)
+		r.Post("/cashwithdrawal/{id}", app.AEPSHandler.CashWithdrawal)
 	})
 }

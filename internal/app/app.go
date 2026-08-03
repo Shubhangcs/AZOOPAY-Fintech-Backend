@@ -75,7 +75,7 @@ func NewApplication() (*Application, error) {
 	statsStore := store.NewPostgresStatsStore(pgdb)
 	dashboardStore := store.NewPostgresDashboardStore(pgdb)
 	aepsOnboardingStore := store.NewPostgresAEPSOnboardingStore(pgdb)
-	aepsStore := store.NewPostgresAEPSStore(pgdb)
+	aepsStore := store.NewPostgresAEPSStore(pgdb, commisionStore, walletTransactionStore)
 
 	// Handlers
 	apiDownHandler := handlers.NewApiDownHandler(apiDownStore, logger)

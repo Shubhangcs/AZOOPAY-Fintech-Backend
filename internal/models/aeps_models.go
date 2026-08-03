@@ -126,14 +126,12 @@ type AEPSOutletLoginResponseModel struct {
 
 type AEPSCashWithdrawalRequestModel struct {
 	RequestID                string                 `json:"requestId"`
-	OutletID                 string                 `json:"outletId"`
 	BankIdentificationNumber string                 `json:"bankin"`
 	Mobile                   string                 `json:"mobile"`
-	Amount                   string                 `json:"amount"`
+	Amount                   float64                `json:"amount"`
 	Latitude                 string                 `json:"latitude"`
 	Longitude                string                 `json:"longitude"`
 	CustomerName             string                 `json:"customerName"`
-	CaptureType              string                 `json:"captureType"`
 	Aadhaar                  string                 `json:"aadhaar"`
 	BiometricData            AEPSBiometricDataModel `json:"biometricData"`
 }
@@ -169,14 +167,12 @@ type AEPSCashWithdrawalResponseModel struct {
 
 type AEPSCashDepositRequestModel struct {
 	RequestID                string                 `json:"requestId"`
-	OutletID                 string                 `json:"outletId"`
 	BankIdentificationNumber string                 `json:"bankin"`
 	Mobile                   string                 `json:"mobile"`
 	Amount                   string                 `json:"amount"`
 	Latitude                 string                 `json:"latitude"`
 	Longitude                string                 `json:"longitude"`
 	CustomerName             string                 `json:"customerName"`
-	CaptureType              string                 `json:"captureType"`
 	Aadhaar                  string                 `json:"aadhaar"`
 	BiometricData            AEPSBiometricDataModel `json:"biometricData"`
 }
