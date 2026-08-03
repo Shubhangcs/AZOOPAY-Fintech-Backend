@@ -139,14 +139,14 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 			return 0, err
 		}
 
-		if err := tdsAepsTx(tx, &aepsTdsTransaction{
-			TransactionID: fmt.Sprintf("%d", aepsTransactionId),
-			TDSAmount:     commision.MasterDistributorCommision * 0.02,
-			UserID:        rtds.mdID,
-			UserType:      "MD",
-		}); err != nil {
-			return 0, err
-		}
+		// if err := tdsAepsTx(tx, &aepsTdsTransaction{
+		// 	TransactionID: fmt.Sprintf("%d", aepsTransactionId),
+		// 	TDSAmount:     commision.MasterDistributorCommision * 0.02,
+		// 	UserID:        rtds.mdID,
+		// 	UserType:      "MD",
+		// }); err != nil {
+		// 	return 0, err
+		// }
 	}
 
 	if commision.DistributorCommision != 0 {
@@ -163,14 +163,14 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		); err != nil {
 			return 0, err
 		}
-		if err := tdsAepsTx(tx, &aepsTdsTransaction{
-			TransactionID: fmt.Sprintf("%d", aepsTransactionId),
-			TDSAmount:     commision.DistributorCommision * 0.02,
-			UserID:        rtds.distributorID,
-			UserType:      "DIS",
-		}); err != nil {
-			return 0, err
-		}
+		// if err := tdsAepsTx(tx, &aepsTdsTransaction{
+		// 	TransactionID: fmt.Sprintf("%d", aepsTransactionId),
+		// 	TDSAmount:     commision.DistributorCommision * 0.02,
+		// 	UserID:        rtds.distributorID,
+		// 	UserType:      "DIS",
+		// }); err != nil {
+		// 	return 0, err
+		// }
 	}
 
 	if commision.RetailerCommision != 0 {
@@ -188,14 +188,14 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 			return 0, err
 		}
 
-		if err := tdsAepsTx(tx, &aepsTdsTransaction{
-			TransactionID: fmt.Sprintf("%d", aepsTransactionId),
-			TDSAmount:     commision.RetailerCommision * 0.02,
-			UserID:        retailerId,
-			UserType:      "RT",
-		}); err != nil {
-			return 0, err
-		}
+		// if err := tdsAepsTx(tx, &aepsTdsTransaction{
+		// 	TransactionID: fmt.Sprintf("%d", aepsTransactionId),
+		// 	TDSAmount:     commision.RetailerCommision * 0.02,
+		// 	UserID:        retailerId,
+		// 	UserType:      "RT",
+		// }); err != nil {
+		// 	return 0, err
+		// }
 	}
 
 	// adminCreditQuery := `
