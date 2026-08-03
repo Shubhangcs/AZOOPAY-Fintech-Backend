@@ -204,7 +204,7 @@ func getMiniStatement(retailerData *models.AEPSDetailsModel, req *models.AEPSMin
 			"latitude":      retailerData.Latitude,
 			"longitude":     retailerData.Longitude,
 			"customerName":  req.CustomerName,
-			"captureType":   "finger",
+			"captureType":   "FINGER",
 			"aadhaar":       req.AadhaarNumber,
 			"biometricData": req.BiometricData,
 		},
