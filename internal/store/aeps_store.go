@@ -82,12 +82,13 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 			transaction_status
 		) VALUES (
 			$1 , $2 , $3 , $4 , $5 , $6 , $7 , $8 , $9 , $10 
-		) RETURNING aeps_transaction_id;
+		) 
+		RETURNING aeps_transaction_id;
 	`
 
 	tx, err := as.db.Begin()
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 	defer tx.Rollback()
 
