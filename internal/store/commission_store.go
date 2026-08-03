@@ -191,7 +191,7 @@ func (cs *PostgresCommisionStore) GetDefaultCommision(amount float64) *models.Co
 }
 
 func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.CommisionModel {
-	if amount > 100 && amount < 500 {
+	if amount >= 100 && amount < 500 {
 		return &models.CommisionModel{
 			TotalCommision:             0,
 			AdminCommision:             0,
@@ -199,7 +199,7 @@ func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.Commi
 			DistributorCommision:       0,
 			RetailerCommision:          0,
 		}
-	} else if amount > 500 && amount < 1000 {
+	} else if amount >= 500 && amount < 1000 {
 		return &models.CommisionModel{
 			TotalCommision:             0,
 			AdminCommision:             0,
@@ -207,7 +207,7 @@ func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.Commi
 			DistributorCommision:       0,
 			RetailerCommision:          2,
 		}
-	} else if amount > 1000 && amount < 2000 {
+	} else if amount >= 1000 && amount < 2000 {
 		return &models.CommisionModel{
 			TotalCommision:             0,
 			AdminCommision:             0,
@@ -215,7 +215,7 @@ func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.Commi
 			DistributorCommision:       0.5,
 			RetailerCommision:          3,
 		}
-	} else if amount > 2000 && amount < 3000 {
+	} else if amount >= 2000 && amount < 3000 {
 		return &models.CommisionModel{
 			TotalCommision:             0,
 			AdminCommision:             0,
@@ -223,7 +223,7 @@ func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.Commi
 			DistributorCommision:       0.5,
 			RetailerCommision:          4,
 		}
-	} else if amount > 3000 && amount < 5000 {
+	} else if amount >= 3000 && amount < 5000 {
 		return &models.CommisionModel{
 			TotalCommision:             0,
 			AdminCommision:             0,
@@ -231,7 +231,7 @@ func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.Commi
 			DistributorCommision:       0.5,
 			RetailerCommision:          7,
 		}
-	} else if amount > 5000 && amount < 7000 {
+	} else if amount >= 5000 && amount < 7000 {
 		return &models.CommisionModel{
 			TotalCommision:             0,
 			AdminCommision:             0,
@@ -239,7 +239,7 @@ func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.Commi
 			DistributorCommision:       0.75,
 			RetailerCommision:          8,
 		}
-	} else if amount > 7000 && amount <= 10000 {
+	} else if amount >= 7000 && amount <= 10000 {
 		return &models.CommisionModel{
 			TotalCommision:             0,
 			AdminCommision:             0,
