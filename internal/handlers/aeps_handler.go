@@ -198,7 +198,7 @@ func getMiniStatement(retailerData *models.AEPSDetailsModel, req *models.AEPSMin
 		map[string]any{
 			"requestId":     req.RequestID,
 			"outletId":      retailerData.OutletID,
-			"bankin":        req.BankID,
+			"bankiin":        req.BankID,
 			"mobile":        req.MobileNumber,
 			"amount":        0,
 			"latitude":      retailerData.Latitude,
