@@ -110,19 +110,19 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		return 0, err
 	}
 
-	if err := debitTx(
-		tx,
-		transaction{
-			UserID:      retailerId,
-			ReferenceID: fmt.Sprintf("%d", aepsTransactionId),
-			Amount:      transactionData.Amount,
-			Reason:      "AEPS",
-			Remarks:     "AEPS transaction for Customer Name: " + transactionData.CustomerName + " Customer Phone: " + transactionData.Mobile + " Retailer id: " + retailerId,
-		},
-		as.walletStore,
-	); err != nil {
-		return 0, err
-	}
+	// if err := debitTx(
+	// 	tx,
+	// 	transaction{
+	// 		UserID:      retailerId,
+	// 		ReferenceID: fmt.Sprintf("%d", aepsTransactionId),
+	// 		Amount:      transactionData.Amount,
+	// 		Reason:      "AEPS",
+	// 		Remarks:     "AEPS transaction for Customer Name: " + transactionData.CustomerName + " Customer Phone: " + transactionData.Mobile + " Retailer id: " + retailerId,
+	// 	},
+	// 	as.walletStore,
+	// ); err != nil {
+	// 	return 0, err
+	// }
 
 	if commision.MasterDistributorCommision != 0 {
 		if err := creditTx(
@@ -198,39 +198,39 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		}
 	}
 
-	adminCreditQuery := `
-		UPDATE admins
-		SET aeps_wallet = aeps_wallet + $1,
-			updated_at = NOW()
-		WHERE admin_id = $2
-		RETURNING aeps_wallet;
-	`
+	// adminCreditQuery := `
+	// 	UPDATE admins
+	// 	SET aeps_wallet = aeps_wallet + $1,
+	// 		updated_at = NOW()
+	// 	WHERE admin_id = $2
+	// 	RETURNING aeps_wallet;
+	// `
 
-	var adminAepsWalletAfterBalance float64
-	if err := tx.QueryRow(
-		adminCreditQuery,
-		transactionData.Amount,
-		rtds.adminID,
-	).Scan(
-		&adminAepsWalletAfterBalance,
-	); err != nil {
-		return 0, err
-	}
+	// var adminAepsWalletAfterBalance float64
+	// if err := tx.QueryRow(
+	// 	adminCreditQuery,
+	// 	transactionData.Amount,
+	// 	rtds.adminID,
+	// ).Scan(
+	// 	&adminAepsWalletAfterBalance,
+	// ); err != nil {
+	// 	return 0, err
+	// }
 
-	if err := as.walletStore.CreateWalletTransactionTx(
-		tx,
-		&models.WalletTransactionModel{
-			UserID:            rtds.adminID,
-			ReferenceID:       fmt.Sprintf("%d", aepsTransactionId),
-			CreditAmount:      &transactionData.Amount,
-			BeforeBalance:     adminAepsWalletAfterBalance - transactionData.Amount,
-			AfterBalance:      adminAepsWalletAfterBalance,
-			TransactionReason: "AEPS",
-			Remarks:           "AEPS from retailer " + retailerId,
-		},
-	); err != nil {
-		return 0, err
-	}
+	// if err := as.walletStore.CreateWalletTransactionTx(
+	// 	tx,
+	// 	&models.WalletTransactionModel{
+	// 		UserID:            rtds.adminID,
+	// 		ReferenceID:       fmt.Sprintf("%d", aepsTransactionId),
+	// 		CreditAmount:      &transactionData.Amount,
+	// 		BeforeBalance:     adminAepsWalletAfterBalance - transactionData.Amount,
+	// 		AfterBalance:      adminAepsWalletAfterBalance,
+	// 		TransactionReason: "AEPS",
+	// 		Remarks:           "AEPS from retailer " + retailerId,
+	// 	},
+	// ); err != nil {
+	// 	return 0, err
+	// }
 
 	return aepsTransactionId, tx.Commit()
 }
