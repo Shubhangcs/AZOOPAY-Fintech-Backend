@@ -37,7 +37,7 @@ func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*mod
 			a.longitude
 		FROM retailers r
 		JOIN aeps_merchant_details m ON m.retailer_id = r.retailer_id
-		JOIN aeps_applicstions a ON a.retailer_id = r.retailer_id
+		JOIN aeps_applications a ON a.retailer_id = r.retailer_id
 		WHERE r.retailer_id = $1;
 	`
 	var res models.AEPSDetailsModel
