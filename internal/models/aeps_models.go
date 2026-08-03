@@ -31,6 +31,8 @@ type AEPSBiometricDataModel struct {
 type AEPSDetailsModel struct {
 	AadhaarNumber string `json:"aadhaar_number"`
 	OutletID      string `json:"outlet_id"`
+	Latitude      string `json:"latitude"`
+	Longitude     string `json:"longitude"`
 }
 
 type AEPSMiniStatementRequestModel struct {

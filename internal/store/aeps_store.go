@@ -32,7 +32,9 @@ func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*mod
 	query := `
 		SELECT
 			r.retailer_aadhar_number,
-			m.outlet_id
+			m.outlet_id,
+			m.latitude,
+			m.longitude
 		FROM retailers r
 		JOIN aeps_merchant_details m ON m.retailer_id = r.retailer_id
 		WHERE r.retailer_id = $1;
@@ -44,6 +46,8 @@ func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*mod
 	).Scan(
 		&res.AadhaarNumber,
 		&res.OutletID,
+		&res.Latitude,
+		&res.Longitude,
 	); err != nil {
 		return nil, err
 	}
