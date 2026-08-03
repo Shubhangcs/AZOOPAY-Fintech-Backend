@@ -99,6 +99,7 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		transactionData.CustomerName,
 		transactionData.Mobile,
 		transactionData.Aadhaar,
+		transactionData.Amount,
 		commision.MasterDistributorCommision,
 		commision.DistributorCommision,
 		commision.RetailerCommision,
