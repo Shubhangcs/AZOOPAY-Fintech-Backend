@@ -291,7 +291,7 @@ const aepsSelectBase = `
 		r.retailer_name,
 		w.before_balance,
 		w.after_balance,
-		w.reason,
+		w.transaction_reason,
 		w.remarks
 	FROM retailers r
 	JOIN aeps_transactions at ON at.retailer_id = r.retailer_id
