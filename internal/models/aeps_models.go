@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type AEPSBiometricDataModel struct {
 	EncryptedAadhaar               string `json:"encryptedAadhaar"`
 	PIDData                        string `json:"pidData"`
@@ -272,4 +274,27 @@ type AEPSBankModel struct {
 	AadhaarPayEnabled        bool   `json:"aadhaarpayEnabled"`
 	AEPSFailureRate          string `json:"aepsFailureRate"`
 	AadhaarPayFailureRate    string `json:"aadhaarpayFailureRate"`
+}
+
+
+type AepsTransactionResponse struct {
+	AepsTransactionID  int64     `json:"aeps_transaction_id" db:"aeps_transaction_id"`
+	ReferenceID        string    `json:"reference_id" db:"reference_id"`
+	TransactionID      string    `json:"transaction_id" db:"transaction_id"`
+	OrderID            string    `json:"order_id" db:"order_id"`
+	CustomerName       string    `json:"customer_name" db:"customer_name"`
+	CustomerPhone      string    `json:"customer_phone" db:"customer_phone"`
+	CustomerAadhaar    string    `json:"customer_aadhaar" db:"customer_aadhaar"`
+	Amount             float64   `json:"amount" db:"amount"`
+	MdCommission       float64   `json:"md_commission" db:"md_commision"`
+	DisCommission      float64   `json:"dis_commission" db:"dis_commision"`
+	RetailerCommission float64   `json:"retailer_commission" db:"retailer_commision"`
+	TransactionStatus  string    `json:"transaction_status" db:"transaction_status"`
+	CreatedAt          time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
+	RetailerName       string    `json:"retailer_name" db:"retailer_name"`
+	BeforeBalance      float64   `json:"before_balance" db:"before_balance"`
+	AfterBalance       float64   `json:"after_balance" db:"after_balance"`
+	Reason             string    `json:"reason" db:"reason"`
+	Remarks            string    `json:"remarks" db:"remarks"`
 }
