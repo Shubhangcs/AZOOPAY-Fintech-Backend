@@ -288,7 +288,7 @@ const aepsSelectBase = `
 		at.transaction_status,
 		at.created_at,
 		at.updated_at,
-		r.retailer_name
+		r.retailer_name,
 		w.before_balance,
 		w.after_balance,
 		w.transaction_reason,
