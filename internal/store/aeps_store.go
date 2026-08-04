@@ -6,12 +6,19 @@ import (
 	"fmt"
 
 	"github.com/levionstudio/fintech/internal/models"
+	"github.com/levionstudio/fintech/internal/utils"
 )
 
 type AEPSStore interface {
 	GetAEPSDetailsByRetailerID(retailerId string) (*models.AEPSDetailsModel, error)
 	InitilizeCashWithdrawal(retailerId string, merchantData *models.AEPSDetailsModel, transactionData *models.AEPSCashWithdrawalRequestModel) (int64, error)
 	FinilizeCashWithdrawal(aepsTransactionId int64, res *models.AEPSCashWithdrawalResponseModel) error
+	GetAllAEPSTransactions(p utils.QueryParams) ([]models.AepsTransactionResponse, error)
+	GetAEPSTransactionsByRetailerID(retailerId string, p utils.QueryParams) ([]models.AepsTransactionResponse, error)
+	GetAllAEPSTDSDeductions(p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error)
+	GetAEPSTDSDeductionsByRetailerID(retailerId string, p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error)
+	GetAEPSTDSDeductionsByDistributorID(distributorId string, p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error)
+	GetAEPSTDSDeductionsByMDID(mdId string, p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error)
 }
 
 type PostgresAEPSStore struct {
@@ -265,34 +272,71 @@ func (as *PostgresAEPSStore) FinilizeCashWithdrawal(aepsTransactionId int64, res
 	return checkRowsAffected(dbres)
 }
 
-func (as *PostgresAEPSStore) GetAllAEPSTransactions() ([]models.AepsTransactionResponse, error) {
-	query := `
-		SELECT 
-			at.aeps_transaction_id,
-			at.reference_id,
-			at.transaction_id,
-			at.order_id,
-			at.customer_name,
-			at.customer_phone,
-			at.customer_aadhaar,
-			at.amount,
-			at.md_commision,
-			at.dis_commision,
-			at.retailer_commision,
-			at.transaction_status,
-			at.created_at,
-			at.updated_at,
-			r.retailer_name,
-			w.before_balance,
-			w.after_balance,
-			w.reason,
-			w.remarks
-		FROM retailers r
-		JOIN aeps_transactions at ON at.retailer_id = r.retailer_id
-		JOIN wallet_transactions w ON w.user_id = r.retailer_id AND w.reference_id = at.aeps_transaction_id::VARCHAR;
-	`
+const aepsSelectBase = `
+	SELECT 
+		at.aeps_transaction_id,
+		at.reference_id,
+		at.transaction_id,
+		at.order_id,
+		at.customer_name,
+		at.customer_phone,
+		at.customer_aadhaar,
+		at.amount,
+		at.md_commision,
+		at.dis_commision,
+		at.retailer_commision,
+		at.transaction_status,
+		at.created_at,
+		at.updated_at,
+		r.retailer_name,
+		w.before_balance,
+		w.after_balance,
+		w.reason,
+		w.remarks
+	FROM retailers r
+	JOIN aeps_transactions at ON at.retailer_id = r.retailer_id
+	JOIN wallet_transactions w ON w.user_id = r.retailer_id AND w.reference_id = at.aeps_transaction_id::VARCHAR
+`
 
-	rows, err := as.db.Query(query)
+func (as *PostgresAEPSStore) GetAllAEPSTransactions(p utils.QueryParams) ([]models.AepsTransactionResponse, error) {
+	q := aepsSelectBase + `
+	WHERE at.created_at >= COALESCE($3, '-infinity'::TIMESTAMPTZ)
+	AND at.created_at <= COALESCE($4, 'infinity'::TIMESTAMPTZ)
+	AND ($5::TEXT IS NULL OR at.transaction_status = $5)
+	AND ($6::TEXT IS NULL OR (
+		at.aeps_transaction_id::TEXT ILIKE '%'||$6||'%' OR
+		at.reference_id ILIKE '%'||$6||'%' OR
+		at.transaction_id ILIKE '%'||$6||'%' OR
+		at.order_id ILIKE '%'||$6||'%' OR
+		at.customer_phone ILIKE '%'||$6||'%'
+	))
+	ORDER BY at.created_at DESC
+	LIMIT $1 OFFSET $2;
+	`
+	return scanAepsTransactions(as.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search)
+}
+
+func (as *PostgresAEPSStore) GetAEPSTransactionsByRetailerID(retailerId string, p utils.QueryParams) ([]models.AepsTransactionResponse, error) {
+	q := aepsSelectBase + `
+	WHERE r.retailer_id = $7
+	AND at.created_at >= COALESCE($3, '-infinity'::TIMESTAMPTZ)
+	AND at.created_at <= COALESCE($4, 'infinity'::TIMESTAMPTZ)
+	AND ($5::TEXT IS NULL OR at.transaction_status = $5)
+	AND ($6::TEXT IS NULL OR (
+		at.aeps_transaction_id::TEXT ILIKE '%'||$6||'%' OR
+		at.reference_id ILIKE '%'||$6||'%' OR
+		at.transaction_id ILIKE '%'||$6||'%' OR
+		at.order_id ILIKE '%'||$6||'%' OR
+		at.customer_phone ILIKE '%'||$6||'%'
+	))
+	ORDER BY at.created_at DESC
+	LIMIT $1 OFFSET $2;
+	`
+	return scanAepsTransactions(as.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search, retailerId)
+}
+
+func scanAepsTransactions(db *sql.DB, query string, args ...any) ([]models.AepsTransactionResponse, error) {
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query aeps transactions: %w", err)
 	}
@@ -337,76 +381,168 @@ func (as *PostgresAEPSStore) GetAllAEPSTransactions() ([]models.AepsTransactionR
 	return transactions, nil
 }
 
-func (as *PostgresAEPSStore) GetAEPSTransactionsByRetailerID(retailerId string) ([]models.AepsTransactionResponse, error) {
-	query := `
-		SELECT 
-			at.aeps_transaction_id,
-			at.reference_id,
-			at.transaction_id,
-			at.order_id,
-			at.customer_name,
-			at.customer_phone,
-			at.customer_aadhaar,
-			at.amount,
-			at.md_commision,
-			at.dis_commision,
-			at.retailer_commision,
-			at.transaction_status,
-			at.created_at,
-			at.updated_at,
-			r.retailer_name,
-			w.before_balance,
-			w.after_balance,
-			w.reason,
-			w.remarks
-		FROM retailers r
-		JOIN aeps_transactions at ON at.retailer_id = r.retailer_id
-		JOIN wallet_transactions w ON w.user_id = r.retailer_id AND w.reference_id = at.aeps_transaction_id::VARCHAR
-		WHERE r.retailer_id = $1
-		ORDER BY at.created_at DESC;
-	`
+const aepsTdsSelectAllBase = `
+	SELECT 
+		t.tds_id,
+		t.aeps_transaction_id,
+		t.user_id,
+		t.user_type,
+		t.created_at,
+		t.updated_at,
+		at.customer_name,
+		COALESCE(r.retailer_name, d.distributor_name, md.master_distributor_name) AS user_name,
+		t.tds_amount
+	FROM aeps_tds t
+	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
+	LEFT JOIN retailers r ON t.user_type = 'RT' AND r.retailer_id = t.user_id
+	LEFT JOIN distributors d ON t.user_type = 'DIS' AND d.distributor_id = t.user_id
+	LEFT JOIN master_distributors md ON t.user_type = 'MD' AND md.master_distributor_id = t.user_id
+`
 
-	rows, err := as.db.Query(query, retailerId)
+func (as *PostgresAEPSStore) GetAllAEPSTDSDeductions(p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error) {
+	q := aepsTdsSelectAllBase + `
+	WHERE t.created_at >= COALESCE($3, '-infinity'::TIMESTAMPTZ)
+	AND t.created_at <= COALESCE($4, 'infinity'::TIMESTAMPTZ)
+	AND ($5::TEXT IS NULL OR t.user_type = $5)
+	AND ($6::TEXT IS NULL OR (
+		t.tds_id::TEXT ILIKE '%'||$6||'%' OR
+		t.user_id ILIKE '%'||$6||'%' OR
+		at.customer_name ILIKE '%'||$6||'%'
+	))
+	ORDER BY t.created_at DESC
+	LIMIT $1 OFFSET $2;
+	`
+	return scanAepsTdsDeductions(as.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search)
+}
+
+const aepsTdsSelectRetailerBase = `
+	SELECT 
+		t.tds_id,
+		t.aeps_transaction_id,
+		t.user_id,
+		t.user_type,
+		t.created_at,
+		t.updated_at,
+		at.customer_name,
+		r.retailer_name AS user_name,
+		t.tds_amount
+	FROM aeps_tds t
+	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
+	JOIN retailers r ON r.retailer_id = t.user_id
+`
+
+func (as *PostgresAEPSStore) GetAEPSTDSDeductionsByRetailerID(retailerId string, p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error) {
+	q := aepsTdsSelectRetailerBase + `
+	WHERE t.user_type = 'RT' AND t.user_id = $7
+	AND t.created_at >= COALESCE($3, '-infinity'::TIMESTAMPTZ)
+	AND t.created_at <= COALESCE($4, 'infinity'::TIMESTAMPTZ)
+	AND ($5::TEXT IS NULL OR t.user_type = $5)
+	AND ($6::TEXT IS NULL OR (
+		t.tds_id::TEXT ILIKE '%'||$6||'%' OR
+		at.customer_name ILIKE '%'||$6||'%'
+	))
+	ORDER BY t.created_at DESC
+	LIMIT $1 OFFSET $2;
+	`
+	return scanAepsTdsDeductions(as.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search, retailerId)
+}
+
+const aepsTdsSelectDistributorBase = `
+	SELECT 
+		t.tds_id,
+		t.aeps_transaction_id,
+		t.user_id,
+		t.user_type,
+		t.created_at,
+		t.updated_at,
+		at.customer_name,
+		d.distributor_name AS user_name,
+		t.tds_amount
+	FROM aeps_tds t
+	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
+	JOIN distributors d ON d.distributor_id = t.user_id
+`
+
+func (as *PostgresAEPSStore) GetAEPSTDSDeductionsByDistributorID(distributorId string, p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error) {
+	q := aepsTdsSelectDistributorBase + `
+	WHERE t.user_type = 'DIS' AND t.user_id = $7
+	AND t.created_at >= COALESCE($3, '-infinity'::TIMESTAMPTZ)
+	AND t.created_at <= COALESCE($4, 'infinity'::TIMESTAMPTZ)
+	AND ($5::TEXT IS NULL OR t.user_type = $5)
+	AND ($6::TEXT IS NULL OR (
+		t.tds_id::TEXT ILIKE '%'||$6||'%' OR
+		at.customer_name ILIKE '%'||$6||'%'
+	))
+	ORDER BY t.created_at DESC
+	LIMIT $1 OFFSET $2;
+	`
+	return scanAepsTdsDeductions(as.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search, distributorId)
+}
+
+const aepsTdsSelectMdBase = `
+	SELECT 
+		t.tds_id,
+		t.aeps_transaction_id,
+		t.user_id,
+		t.user_type,
+		t.created_at,
+		t.updated_at,
+		at.customer_name,
+		md.master_distributor_name AS user_name,
+		t.tds_amount
+	FROM aeps_tds t
+	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
+	JOIN master_distributors md ON md.master_distributor_id = t.user_id
+`
+
+func (as *PostgresAEPSStore) GetAEPSTDSDeductionsByMDID(mdId string, p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error) {
+	q := aepsTdsSelectMdBase + `
+	WHERE t.user_type = 'MD' AND t.user_id = $7
+	AND t.created_at >= COALESCE($3, '-infinity'::TIMESTAMPTZ)
+	AND t.created_at <= COALESCE($4, 'infinity'::TIMESTAMPTZ)
+	AND ($5::TEXT IS NULL OR t.user_type = $5)
+	AND ($6::TEXT IS NULL OR (
+		t.tds_id::TEXT ILIKE '%'||$6||'%' OR
+		at.customer_name ILIKE '%'||$6||'%'
+	))
+	ORDER BY t.created_at DESC
+	LIMIT $1 OFFSET $2;
+	`
+	return scanAepsTdsDeductions(as.db, q, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search, mdId)
+}
+
+func scanAepsTdsDeductions(db *sql.DB, query string, args ...any) ([]models.AepsTdsDeductionResponse, error) {
+	rows, err := db.Query(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query aeps transactions for retailer %s: %w", retailerId, err)
+		return nil, fmt.Errorf("failed to query aeps tds deductions: %w", err)
 	}
 	defer rows.Close()
 
-	var transactions []models.AepsTransactionResponse
+	var deductions []models.AepsTdsDeductionResponse
 
 	for rows.Next() {
-		var t models.AepsTransactionResponse
+		var d models.AepsTdsDeductionResponse
 
 		if err := rows.Scan(
-			&t.AepsTransactionID,
-			&t.ReferenceID,
-			&t.TransactionID,
-			&t.OrderID,
-			&t.CustomerName,
-			&t.CustomerPhone,
-			&t.CustomerAadhaar,
-			&t.Amount,
-			&t.MdCommission,
-			&t.DisCommission,
-			&t.RetailerCommission,
-			&t.TransactionStatus,
-			&t.CreatedAt,
-			&t.UpdatedAt,
-			&t.RetailerName,
-			&t.BeforeBalance,
-			&t.AfterBalance,
-			&t.Reason,
-			&t.Remarks,
+			&d.TdsID,
+			&d.AepsTransactionID,
+			&d.UserID,
+			&d.UserType,
+			&d.CreatedAt,
+			&d.UpdatedAt,
+			&d.CustomerName,
+			&d.UserName,
+			&d.TdsAmount,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan aeps transaction row: %w", err)
+			return nil, fmt.Errorf("failed to scan aeps tds deduction row: %w", err)
 		}
 
-		transactions = append(transactions, t)
+		deductions = append(deductions, d)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating aeps transaction rows: %w", err)
+		return nil, fmt.Errorf("error iterating aeps tds deduction rows: %w", err)
 	}
 
-	return transactions, nil
+	return deductions, nil
 }

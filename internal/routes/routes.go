@@ -438,5 +438,13 @@ func aepsRoutes(router *chi.Mux, app *app.Application) {
 		r.Post("/ministatement/{id}", app.AEPSHandler.GetMiniStatement)
 		r.Post("/balance/check/{id}", app.AEPSHandler.GetBalance)
 		r.Post("/cashwithdrawal/{id}", app.AEPSHandler.CashWithdrawal)
+
+		r.Get("/transactions", app.AEPSHandler.GetAllAEPSTransactions)
+		r.Get("/transactions/retailer/{id}", app.AEPSHandler.GetAEPSTransactionsByRetailerID)
+
+		r.Get("/tds", app.AEPSHandler.GetAllAEPSTDSDeductions)
+		r.Get("/tds/retailer/{id}", app.AEPSHandler.GetAEPSTDSDeductionsByRetailerID)
+		r.Get("/tds/distributor/{id}", app.AEPSHandler.GetAEPSTDSDeductionsByDistributorID)
+		r.Get("/tds/md/{id}", app.AEPSHandler.GetAEPSTDSDeductionsByMDID)
 	})
 }

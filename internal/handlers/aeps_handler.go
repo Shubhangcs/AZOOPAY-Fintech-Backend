@@ -198,7 +198,7 @@ func getMiniStatement(retailerData *models.AEPSDetailsModel, req *models.AEPSMin
 		map[string]any{
 			"requestId":     req.RequestID,
 			"outletId":      retailerData.OutletID,
-			"bankiin":        req.BankID,
+			"bankiin":       req.BankID,
 			"mobile":        req.MobileNumber,
 			"amount":        0,
 			"latitude":      retailerData.Latitude,
@@ -255,7 +255,7 @@ func getBalance(retailerData *models.AEPSDetailsModel, req *models.AEPSBalanceEn
 		map[string]any{
 			"requestId":     req.RequestID,
 			"outletId":      retailerData.OutletID,
-			"bankiin":        req.BankID,
+			"bankiin":       req.BankID,
 			"mobile":        req.MobileNumber,
 			"amount":        0,
 			"latitude":      retailerData.Latitude,
@@ -349,4 +349,100 @@ func cashWithdrawal(merchantData *models.AEPSDetailsModel, req *models.AEPSCashW
 	}
 
 	return &res, nil
+}
+
+func (ah *AEPSHandler) GetAllAEPSTransactions(w http.ResponseWriter, r *http.Request) {
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ah.AEPSStore.GetAllAEPSTransactions(qp)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get all aeps transactions", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "all aeps transaction fetched successfully", "transactions": res})
+}
+
+func (ah *AEPSHandler) GetAEPSTransactionsByRetailerID(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps transactions by retailer id", err)
+		return
+	}
+
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ah.AEPSStore.GetAEPSTransactionsByRetailerID(retailerId, qp)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get aeps transactions by retailer id", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps transaction fetched successfully", "transactions": res})
+}
+
+func (ah *AEPSHandler) GetAllAEPSTDSDeductions(w http.ResponseWriter, r *http.Request) {
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ah.AEPSStore.GetAllAEPSTDSDeductions(qp)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get all aeps tds deductions", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "all aeps tds deductions fetched successfully", "deductions": res})
+}
+
+func (ah *AEPSHandler) GetAEPSTDSDeductionsByRetailerID(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps tds deductions by retailer id", err)
+		return
+	}
+
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ah.AEPSStore.GetAEPSTDSDeductionsByRetailerID(retailerId, qp)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get aeps tds deductions by retailer id", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps tds deductions fetched successfully", "deductions": res})
+}
+
+func (ah *AEPSHandler) GetAEPSTDSDeductionsByDistributorID(w http.ResponseWriter, r *http.Request) {
+	distributorId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps tds deductions by distributor id", err)
+		return
+	}
+
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ah.AEPSStore.GetAEPSTDSDeductionsByDistributorID(distributorId, qp)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get aeps tds deductions by distributor id", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps tds deductions fetched successfully", "deductions": res})
+}
+
+func (ah *AEPSHandler) GetAEPSTDSDeductionsByMDID(w http.ResponseWriter, r *http.Request) {
+	mdId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "get aeps tds deductions by md id", err)
+		return
+	}
+
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ah.AEPSStore.GetAEPSTDSDeductionsByMDID(mdId, qp)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "get aeps tds deductions by md id", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps tds deductions fetched successfully", "deductions": res})
 }

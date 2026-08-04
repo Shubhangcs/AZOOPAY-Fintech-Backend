@@ -276,7 +276,6 @@ type AEPSBankModel struct {
 	AadhaarPayFailureRate    string `json:"aadhaarpayFailureRate"`
 }
 
-
 type AepsTransactionResponse struct {
 	AepsTransactionID  int64     `json:"aeps_transaction_id" db:"aeps_transaction_id"`
 	ReferenceID        string    `json:"reference_id" db:"reference_id"`
@@ -297,4 +296,16 @@ type AepsTransactionResponse struct {
 	AfterBalance       float64   `json:"after_balance" db:"after_balance"`
 	Reason             string    `json:"reason" db:"reason"`
 	Remarks            string    `json:"remarks" db:"remarks"`
+}
+
+type AepsTdsDeductionResponse struct {
+	TdsID             int64     `json:"tds_id" db:"tds_id"`
+	AepsTransactionID int64     `json:"aeps_transaction_id" db:"aeps_transaction_id"`
+	UserID            string    `json:"user_id" db:"user_id"`
+	UserType          string    `json:"user_type" db:"user_type"`
+	CreatedAt         time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
+	CustomerName      string    `json:"customer_name" db:"customer_name"`
+	UserName          string    `json:"user_name" db:"user_name"`
+	TdsAmount         float64   `json:"tds_amount" db:"tds_amount"`
 }
