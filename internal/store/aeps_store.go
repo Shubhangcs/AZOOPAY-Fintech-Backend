@@ -295,7 +295,7 @@ const aepsSelectBase = `
 		w.remarks
 	FROM retailers r
 	JOIN aeps_transactions at ON at.retailer_id = r.retailer_id
-	JOIN wallet_transactions w ON w.user_id = r.retailer_id AND w.reference_id = at.aeps_transaction_id AND w.transaction_reason = 'AEPS';
+	JOIN wallet_transactions w ON w.user_id = r.retailer_id AND w.reference_id = at.aeps_transaction_id::VARCHAR AND w.transaction_reason = 'AEPS';
 `
 
 func (as *PostgresAEPSStore) GetAllAEPSTransactions(p utils.QueryParams) ([]models.AepsTransactionResponse, error) {
