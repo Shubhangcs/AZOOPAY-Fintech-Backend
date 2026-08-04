@@ -133,6 +133,21 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		return 0, err
 	}
 
+	if err := creditTx(
+		tx,
+		transaction{
+			UserID:        retailerId,
+			ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
+			Amount:        transactionData.Amount,
+			Reason:        "AEPS",
+			Remarks:       "AEPS Amount Credit To: " + retailerId,
+			userTableInfo: *rtTableInfo,
+		},
+		as.walletStore,
+	); err != nil {
+		return 0, err
+	}
+
 	if commision.MasterDistributorCommision != 0 {
 		if err := creditTx(
 			tx,
@@ -230,21 +245,6 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		return 0, err
 	}
 
-	// if err := as.walletStore.CreateWalletTransactionTx(
-	// 	tx,
-	// 	&models.WalletTransactionModel{
-	// 		UserID:            rtds.adminID,
-	// 		ReferenceID:       fmt.Sprintf("%d", aepsTransactionId),
-	// 		CreditAmount:      &transactionData.Amount,
-	// 		BeforeBalance:     adminAepsWalletAfterBalance - transactionData.Amount,
-	// 		AfterBalance:      adminAepsWalletAfterBalance,
-	// 		TransactionReason: "AEPS",
-	// 		Remarks:           "AEPS from retailer " + retailerId,
-	// 	},
-	// ); err != nil {
-	// 	return 0, err
-	// }
-
 	return aepsTransactionId, tx.Commit()
 }
 
@@ -289,8 +289,13 @@ const aepsSelectBase = `
 		at.created_at,
 		at.updated_at,
 		r.retailer_name
+		w.before_balance,
+		w.after_balance,
+		w.transaction_reason,
+		w.remarks
 	FROM retailers r
 	JOIN aeps_transactions at ON at.retailer_id = r.retailer_id
+	JOIN wallet_transactions w ON w.user_id = r.retailer_id AND w.reference_id = at.aeps_transaction_id AND w.transaction_reason = 'AEPS';
 `
 
 func (as *PostgresAEPSStore) GetAllAEPSTransactions(p utils.QueryParams) ([]models.AepsTransactionResponse, error) {

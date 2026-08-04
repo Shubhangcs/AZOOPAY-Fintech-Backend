@@ -292,6 +292,10 @@ type AepsTransactionResponse struct {
 	CreatedAt          time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 	RetailerName       string    `json:"retailer_name" db:"retailer_name"`
+	BeforeBalance      float64   `json:"before_balance" db:"before_balance"`
+	AfterBalance       float64   `json:"after_balance" db:"after_balance"`
+	Reason             string    `json:"reason" db:"reason"`
+	Remarks            string    `json:"remarks" db:"remarks"`
 }
 
 type AepsTdsDeductionResponse struct {
