@@ -288,14 +288,9 @@ const aepsSelectBase = `
 		at.transaction_status,
 		at.created_at,
 		at.updated_at,
-		r.retailer_name,
-		w.before_balance,
-		w.after_balance,
-		w.transaction_reason,
-		w.remarks
+		r.retailer_name
 	FROM retailers r
 	JOIN aeps_transactions at ON at.retailer_id = r.retailer_id
-	JOIN wallet_transactions w ON w.user_id = r.retailer_id AND w.reference_id = at.aeps_transaction_id::VARCHAR
 `
 
 func (as *PostgresAEPSStore) GetAllAEPSTransactions(p utils.QueryParams) ([]models.AepsTransactionResponse, error) {
@@ -363,10 +358,6 @@ func scanAepsTransactions(db *sql.DB, query string, args ...any) ([]models.AepsT
 			&t.CreatedAt,
 			&t.UpdatedAt,
 			&t.RetailerName,
-			&t.BeforeBalance,
-			&t.AfterBalance,
-			&t.Reason,
-			&t.Remarks,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan aeps transaction row: %w", err)
 		}
