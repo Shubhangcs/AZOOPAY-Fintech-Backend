@@ -137,6 +137,7 @@ func (as *PostgresAdminStore) GetAdminByID(id string) (*models.AdminModel, error
 		admin_phone,
 		admin_password,
 		admin_wallet_balance,
+		aeps_wallet,
 		created_at,
 		updated_at
 	FROM admins
@@ -150,6 +151,7 @@ func (as *PostgresAdminStore) GetAdminByID(id string) (*models.AdminModel, error
 		&admin.AdminPhone,
 		&admin.AdminPassword,
 		&admin.AdminWalletBalance,
+		&admin.AEPSWallet,
 		&admin.CreatedAT,
 		&admin.UpdatedAT,
 	)

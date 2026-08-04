@@ -14,6 +14,7 @@ type AdminModel struct {
 	AdminPhone         string    `json:"admin_phone"`
 	AdminPassword      string    `json:"admin_password"`
 	AdminWalletBalance float64   `json:"admin_wallet_balance"`
+	AEPSWallet         float64   `json:"aeps_wallet"`
 	CreatedAT          time.Time `json:"created_at"`
 	UpdatedAT          time.Time `json:"updated_at"`
 }
