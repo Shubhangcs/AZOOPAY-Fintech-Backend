@@ -254,7 +254,7 @@ type aepsTdsTransaction struct {
 func tdsAepsTx(tx *sql.Tx, txn *aepsTdsTransaction) error {
 	query := `
 		INSERT INTO aeps_tds(
-			transaction_id,
+			aeps_transaction_id,
 			tds_amount,
 			user_id,
 			user_type
