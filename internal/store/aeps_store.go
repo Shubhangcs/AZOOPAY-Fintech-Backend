@@ -117,7 +117,7 @@ func (as *PostgresAEPSStore) FinilizeAEPSCashWithdrawal(retailerId string, merch
 	}
 	defer tx.Rollback()
 
-	if res.Status != "FAILED" || res.Status != "FAILURE" || res.Status != "Failure" || res.TransactionStatus != "FAILED" || res.TransactionStatus != "FAILURE" || res.TransactionStatus != "Failure" {
+	if res.Status != "FAILED" && res.Status != "FAILURE" && res.Status != "Failure" && res.TransactionStatus != "FAILED" && res.TransactionStatus != "FAILURE" && res.TransactionStatus != "Failure" {
 		rtds, err := getRetailerDetails(as.db, retailerId)
 		if err != nil {
 			return err
