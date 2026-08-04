@@ -11,8 +11,8 @@ import (
 
 type AEPSStore interface {
 	GetAEPSDetailsByRetailerID(retailerId string) (*models.AEPSDetailsModel, error)
-	InitilizeCashWithdrawal(retailerId string, merchantData *models.AEPSDetailsModel, transactionData *models.AEPSCashWithdrawalRequestModel) (int64, error)
-	FinilizeCashWithdrawal(aepsTransactionId int64, res *models.AEPSCashWithdrawalResponseModel) error
+	InitilizeAEPSCashWithdrawalTransaction(retailerId string, merchantData *models.AEPSDetailsModel, transactionData *models.AEPSCashWithdrawalRequestModel) (int64, *models.CommisionModel, error)
+	FinilizeAEPSCashWithdrawal(retailerId string, merchantData *models.AEPSDetailsModel, transactionData *models.AEPSCashWithdrawalRequestModel, commision *models.CommisionModel, aepsTransactionId int64, res *models.AEPSCashWithdrawalResponseModel) error
 	GetAllAEPSTransactions(p utils.QueryParams) ([]models.AepsTransactionResponse, error)
 	GetAEPSTransactionsByRetailerID(retailerId string, p utils.QueryParams) ([]models.AepsTransactionResponse, error)
 	GetAllAEPSTDSDeductions(p utils.QueryParams) ([]models.AepsTdsDeductionResponse, error)
@@ -63,31 +63,10 @@ func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*mod
 	return &res, nil
 }
 
-func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchantData *models.AEPSDetailsModel, transactionData *models.AEPSCashWithdrawalRequestModel) (int64, error) {
-
-	rtds, err := getRetailerDetails(as.db, retailerId)
-	if err != nil {
-		return 0, err
-	}
-
+func (as *PostgresAEPSStore) InitilizeAEPSCashWithdrawalTransaction(retailerId string, merchantData *models.AEPSDetailsModel, transactionData *models.AEPSCashWithdrawalRequestModel) (int64, *models.CommisionModel, error) {
 	commision := as.commisionStore.GetAEPSCommision(transactionData.Amount)
 	if commision == nil {
-		return 0, errors.New("invalid amount")
-	}
-
-	rtTableInfo, err := getUserTableInfo(retailerId)
-	if err != nil {
-		return 0, err
-	}
-
-	disTableInfo, err := getUserTableInfo(rtds.distributorID)
-	if err != nil {
-		return 0, err
-	}
-
-	mdTableInfo, err := getUserTableInfo(rtds.mdID)
-	if err != nil {
-		return 0, err
+		return 0, nil, errors.New("invalid amount")
 	}
 
 	query := `
@@ -108,14 +87,8 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		RETURNING aeps_transaction_id;
 	`
 
-	tx, err := as.db.Begin()
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
-
 	var aepsTransactionId int64
-	if err := tx.QueryRow(
+	if err := as.db.QueryRow(
 		query,
 		retailerId,
 		transactionData.RequestID,
@@ -130,103 +103,135 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 	).Scan(
 		&aepsTransactionId,
 	); err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
-	if err := creditTx(
-		tx,
-		transaction{
-			UserID:        retailerId,
-			ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
-			Amount:        transactionData.Amount,
-			Reason:        "AEPS",
-			Remarks:       "AEPS Amount Credit To: " + retailerId,
-			userTableInfo: *rtTableInfo,
-		},
-		as.walletStore,
-	); err != nil {
-		return 0, err
+	return aepsTransactionId, commision, nil
+}
+
+func (as *PostgresAEPSStore) FinilizeAEPSCashWithdrawal(retailerId string, merchantData *models.AEPSDetailsModel, transactionData *models.AEPSCashWithdrawalRequestModel, commision *models.CommisionModel, aepsTransactionId int64, res *models.AEPSCashWithdrawalResponseModel) error {
+
+	tx, err := as.db.Begin()
+	if err != nil {
+		return err
 	}
+	defer tx.Rollback()
 
-	if commision.MasterDistributorCommision != 0 {
-		if err := creditTx(
-			tx,
-			transaction{
-				UserID:        rtds.mdID,
-				ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
-				Amount:        commision.MasterDistributorCommision * 0.98,
-				Reason:        "AEPS_COMMISSION",
-				Remarks:       "AEPS Commision for MD: " + rtds.mdID,
-				userTableInfo: *mdTableInfo,
-			},
-			as.walletStore,
-		); err != nil {
-			return 0, err
+	if res.Status != "FAILED" || res.Status != "FAILURE" || res.Status != "Failure" || res.TransactionStatus != "FAILED" || res.TransactionStatus != "FAILURE" || res.TransactionStatus != "Failure" {
+		rtds, err := getRetailerDetails(as.db, retailerId)
+		if err != nil {
+			return err
 		}
 
-		if err := tdsAepsTx(tx, &aepsTdsTransaction{
-			TransactionID: fmt.Sprintf("%d", aepsTransactionId),
-			TDSAmount:     commision.MasterDistributorCommision * 0.02,
-			UserID:        rtds.mdID,
-			UserType:      "MD",
-		}); err != nil {
-			return 0, err
-		}
-	}
-
-	if commision.DistributorCommision != 0 {
-		if err := creditTx(
-			tx,
-			transaction{
-				UserID:        rtds.distributorID,
-				ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
-				Amount:        commision.DistributorCommision * 0.98,
-				Reason:        "AEPS_COMMISSION",
-				Remarks:       "AEPS Commision for Distributor: " + rtds.distributorID,
-				userTableInfo: *disTableInfo,
-			},
-			as.walletStore,
-		); err != nil {
-			return 0, err
+		rtTableInfo, err := getUserTableInfo(retailerId)
+		if err != nil {
+			return err
 		}
 
-		if err := tdsAepsTx(tx, &aepsTdsTransaction{
-			TransactionID: fmt.Sprintf("%d", aepsTransactionId),
-			TDSAmount:     commision.DistributorCommision * 0.02,
-			UserID:        rtds.distributorID,
-			UserType:      "DIS",
-		}); err != nil {
-			return 0, err
+		disTableInfo, err := getUserTableInfo(rtds.distributorID)
+		if err != nil {
+			return err
 		}
-	}
 
-	if commision.RetailerCommision != 0 {
+		mdTableInfo, err := getUserTableInfo(rtds.mdID)
+		if err != nil {
+			return err
+		}
+
 		if err := creditTx(
 			tx,
 			transaction{
 				UserID:        retailerId,
 				ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
-				Amount:        commision.RetailerCommision * 0.98,
-				Reason:        "AEPS_COMMISSION",
-				Remarks:       "AEPS Commision for Retailer: " + retailerId,
+				Amount:        transactionData.Amount,
+				Reason:        "AEPS",
+				Remarks:       "AEPS Amount Credit To: " + retailerId,
 				userTableInfo: *rtTableInfo,
 			},
 			as.walletStore,
 		); err != nil {
-			return 0, err
+			return err
 		}
 
-		if err := tdsAepsTx(tx, &aepsTdsTransaction{
-			TransactionID: fmt.Sprintf("%d", aepsTransactionId),
-			TDSAmount:     commision.RetailerCommision * 0.02,
-			UserID:        retailerId,
-			UserType:      "RT",
-		}); err != nil {
-			return 0, err
-		}
-	}
+		if commision.MasterDistributorCommision != 0 {
+			if err := creditTx(
+				tx,
+				transaction{
+					UserID:        rtds.mdID,
+					ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
+					Amount:        commision.MasterDistributorCommision * 0.98,
+					Reason:        "AEPS_COMMISSION",
+					Remarks:       "AEPS Commision for MD: " + rtds.mdID,
+					userTableInfo: *mdTableInfo,
+				},
+				as.walletStore,
+			); err != nil {
+				return err
+			}
 
-	adminCreditQuery := `
+			if err := tdsAepsTx(tx, &aepsTdsTransaction{
+				TransactionID: fmt.Sprintf("%d", aepsTransactionId),
+				TDSAmount:     commision.MasterDistributorCommision * 0.02,
+				UserID:        rtds.mdID,
+				UserType:      "MD",
+			}); err != nil {
+				return err
+			}
+		}
+
+		if commision.DistributorCommision != 0 {
+			if err := creditTx(
+				tx,
+				transaction{
+					UserID:        rtds.distributorID,
+					ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
+					Amount:        commision.DistributorCommision * 0.98,
+					Reason:        "AEPS_COMMISSION",
+					Remarks:       "AEPS Commision for Distributor: " + rtds.distributorID,
+					userTableInfo: *disTableInfo,
+				},
+				as.walletStore,
+			); err != nil {
+				return err
+			}
+
+			if err := tdsAepsTx(tx, &aepsTdsTransaction{
+				TransactionID: fmt.Sprintf("%d", aepsTransactionId),
+				TDSAmount:     commision.DistributorCommision * 0.02,
+				UserID:        rtds.distributorID,
+				UserType:      "DIS",
+			}); err != nil {
+				return err
+			}
+		}
+
+		if commision.RetailerCommision != 0 {
+			if err := creditTx(
+				tx,
+				transaction{
+					UserID:        retailerId,
+					ReferenceID:   fmt.Sprintf("%d", aepsTransactionId),
+					Amount:        commision.RetailerCommision * 0.98,
+					Reason:        "AEPS_COMMISSION",
+					Remarks:       "AEPS Commision for Retailer: " + retailerId,
+					userTableInfo: *rtTableInfo,
+				},
+				as.walletStore,
+			); err != nil {
+				return err
+			}
+
+			if err := tdsAepsTx(tx, &aepsTdsTransaction{
+				TransactionID: fmt.Sprintf("%d", aepsTransactionId),
+				TDSAmount:     commision.RetailerCommision * 0.02,
+				UserID:        retailerId,
+				UserType:      "RT",
+			}); err != nil {
+				return err
+			}
+		}
+
+		adminCreditQuery := `
 		UPDATE admins
 		SET aeps_wallet = aeps_wallet + $1,
 			updated_at = NOW()
@@ -234,21 +239,18 @@ func (as *PostgresAEPSStore) InitilizeCashWithdrawal(retailerId string, merchant
 		RETURNING aeps_wallet;
 	`
 
-	var adminAepsWalletAfterBalance float64
-	if err := tx.QueryRow(
-		adminCreditQuery,
-		transactionData.Amount,
-		rtds.adminID,
-	).Scan(
-		&adminAepsWalletAfterBalance,
-	); err != nil {
-		return 0, err
+		var adminAepsWalletAfterBalance float64
+		if err := tx.QueryRow(
+			adminCreditQuery,
+			transactionData.Amount,
+			rtds.adminID,
+		).Scan(
+			&adminAepsWalletAfterBalance,
+		); err != nil {
+			return err
+		}
 	}
 
-	return aepsTransactionId, tx.Commit()
-}
-
-func (as *PostgresAEPSStore) FinilizeCashWithdrawal(aepsTransactionId int64, res *models.AEPSCashWithdrawalResponseModel) error {
 	query := `
 		UPDATE aeps_transactions
 		SET transaction_status = COALESCE(NULLIF($1 , '') , transaction_status),
@@ -257,7 +259,7 @@ func (as *PostgresAEPSStore) FinilizeCashWithdrawal(aepsTransactionId int64, res
 		WHERE aeps_transaction_id = $4;
 	`
 
-	dbres, err := as.db.Exec(
+	dbres, err := tx.Exec(
 		query,
 		res.TransactionStatus,
 		res.TransactionID,
@@ -269,7 +271,11 @@ func (as *PostgresAEPSStore) FinilizeCashWithdrawal(aepsTransactionId int64, res
 		return err
 	}
 
-	return checkRowsAffected(dbres)
+	if err := checkRowsAffected(dbres); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 const aepsSelectBase = `

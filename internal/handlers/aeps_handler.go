@@ -297,7 +297,7 @@ func (ah *AEPSHandler) CashWithdrawal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	aepsTransactionId, err := ah.AEPSStore.InitilizeCashWithdrawal(retailerId, merd, &req)
+	aepsTransactionId, commision, err := ah.AEPSStore.InitilizeAEPSCashWithdrawalTransaction(retailerId, merd, &req)
 	if err != nil {
 		utils.ServerError(w, ah.logger, "aeps cash withdrawal", err)
 		return
@@ -309,7 +309,7 @@ func (ah *AEPSHandler) CashWithdrawal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ah.AEPSStore.FinilizeCashWithdrawal(aepsTransactionId, apiRes); err != nil {
+	if err := ah.AEPSStore.FinilizeAEPSCashWithdrawal(retailerId, merd, &req, commision, aepsTransactionId, apiRes); err != nil {
 		utils.ServerError(w, ah.logger, "aeps cash withdrawal", err)
 		return
 	}
@@ -344,9 +344,9 @@ func cashWithdrawal(merchantData *models.AEPSDetailsModel, req *models.AEPSCashW
 		return nil, err
 	}
 
-	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
-		return nil, errors.New(res.Message)
-	}
+	// if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
+	// 	return nil, errors.New(res.Message)
+	// }
 
 	return &res, nil
 }
