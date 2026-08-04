@@ -363,6 +363,10 @@ func scanAepsTransactions(db *sql.DB, query string, args ...any) ([]models.AepsT
 			&t.CreatedAt,
 			&t.UpdatedAt,
 			&t.RetailerName,
+			&t.BeforeBalance,
+			&t.AfterBalance,
+			&t.Reason,
+			&t.Remarks,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan aeps transaction row: %w", err)
 		}
