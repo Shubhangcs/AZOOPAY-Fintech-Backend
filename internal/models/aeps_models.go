@@ -312,7 +312,7 @@ type AepsTdsDeductionResponse struct {
 	UserName                   string    `json:"user_name" db:"user_name"`
 	TdsAmount                  float64   `json:"tds_amount" db:"tds_amount"`
 	PanNumber                  string    `json:"pan_number"`
-	RetailerCommision          string    `json:"retailer_commision"`
-	MasterDistributorCommision string    `json:"master_distributor_commision"`
-	DistributorCommision       string    `json:"distributor_commision"`
+	RetailerCommision          float64   `json:"retailer_commision"`
+	MasterDistributorCommision float64   `json:"master_distributor_commision"`
+	DistributorCommision       float64   `json:"distributor_commision"`
 }
