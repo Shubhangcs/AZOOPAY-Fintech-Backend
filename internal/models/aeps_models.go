@@ -302,13 +302,17 @@ type AepsTransactionResponse struct {
 }
 
 type AepsTdsDeductionResponse struct {
-	TdsID             int64     `json:"tds_id" db:"tds_id"`
-	AepsTransactionID int64     `json:"aeps_transaction_id" db:"aeps_transaction_id"`
-	UserID            string    `json:"user_id" db:"user_id"`
-	UserType          string    `json:"user_type" db:"user_type"`
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
-	CustomerName      string    `json:"customer_name" db:"customer_name"`
-	UserName          string    `json:"user_name" db:"user_name"`
-	TdsAmount         float64   `json:"tds_amount" db:"tds_amount"`
+	TdsID                      int64     `json:"tds_id" db:"tds_id"`
+	AepsTransactionID          int64     `json:"aeps_transaction_id" db:"aeps_transaction_id"`
+	UserID                     string    `json:"user_id" db:"user_id"`
+	UserType                   string    `json:"user_type" db:"user_type"`
+	CreatedAt                  time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt                  time.Time `json:"updated_at" db:"updated_at"`
+	CustomerName               string    `json:"customer_name" db:"customer_name"`
+	UserName                   string    `json:"user_name" db:"user_name"`
+	TdsAmount                  float64   `json:"tds_amount" db:"tds_amount"`
+	PanNumber                  string    `json:"pan_number"`
+	RetailerCommision          string    `json:"retailer_commision"`
+	MasterDistributorCommision string    `json:"master_distributor_commision"`
+	DistributorCommision       string    `json:"distributor_commision"`
 }

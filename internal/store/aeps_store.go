@@ -396,8 +396,12 @@ const aepsTdsSelectAllBase = `
 		t.created_at,
 		t.updated_at,
 		at.customer_name,
+		at.retailer_commision,
+		at.dis_commision,
+		at.md_commision,
 		COALESCE(r.retailer_name, d.distributor_name, md.master_distributor_name) AS user_name,
-		t.tds_amount
+		t.tds_amount,
+		COALESCE(r.retailer_pan_number, d.distributor_pan_number, md.master_distributor_pan_number) AS user_pan_number
 	FROM aeps_tds t
 	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
 	LEFT JOIN retailers r ON t.user_type = 'RT' AND r.retailer_id = t.user_id
@@ -430,8 +434,12 @@ const aepsTdsSelectRetailerBase = `
 		t.created_at,
 		t.updated_at,
 		at.customer_name,
+		at.retailer_commision,
+		at.dis_commision,
+		at.md_commision,
 		r.retailer_name AS user_name,
-		t.tds_amount
+		t.tds_amount,
+		r.retailer_pan_number AS user_pan_number
 	FROM aeps_tds t
 	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
 	JOIN retailers r ON r.retailer_id = t.user_id
@@ -462,8 +470,12 @@ const aepsTdsSelectDistributorBase = `
 		t.created_at,
 		t.updated_at,
 		at.customer_name,
+		at.retailer_commision,
+		at.dis_commision,
+		at.md_commision,
 		d.distributor_name AS user_name,
-		t.tds_amount
+		t.tds_amount,
+		d.distributor_pan_number AS user_pan_number
 	FROM aeps_tds t
 	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
 	JOIN distributors d ON d.distributor_id = t.user_id
@@ -494,8 +506,12 @@ const aepsTdsSelectMdBase = `
 		t.created_at,
 		t.updated_at,
 		at.customer_name,
+		at.retailer_commision,
+		at.dis_commision,
+		at.md_commision,
 		md.master_distributor_name AS user_name,
-		t.tds_amount
+		t.tds_amount,
+		md.master_pan_number AS user_pan_number
 	FROM aeps_tds t
 	JOIN aeps_transactions at ON at.aeps_transaction_id = t.aeps_transaction_id
 	JOIN master_distributors md ON md.master_distributor_id = t.user_id
@@ -537,8 +553,12 @@ func scanAepsTdsDeductions(db *sql.DB, query string, args ...any) ([]models.Aeps
 			&d.CreatedAt,
 			&d.UpdatedAt,
 			&d.CustomerName,
+			&d.RetailerCommision,
+			&d.DistributorCommision,
+			&d.MasterDistributorCommision,
 			&d.UserName,
 			&d.TdsAmount,
+			&d.PanNumber,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan aeps tds deduction row: %w", err)
 		}
