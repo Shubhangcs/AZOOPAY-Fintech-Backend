@@ -441,6 +441,7 @@ func aepsRoutes(router *chi.Mux, app *app.Application) {
 
 		r.Get("/transactions", app.AEPSHandler.GetAllAEPSTransactions)
 		r.Get("/transactions/retailer/{id}", app.AEPSHandler.GetAEPSTransactionsByRetailerID)
+		r.Post("/transaction/otp/{id}" , app.AEPSHandler.GenerateAEPSTransactionOTP)
 
 		r.Get("/tds", app.AEPSHandler.GetAllAEPSTDSDeductions)
 		r.Get("/tds/retailer/{id}", app.AEPSHandler.GetAEPSTDSDeductionsByRetailerID)

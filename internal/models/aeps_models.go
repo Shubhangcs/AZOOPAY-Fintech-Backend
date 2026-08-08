@@ -316,3 +316,14 @@ type AepsTdsDeductionResponse struct {
 	MasterDistributorCommision float64   `json:"master_distributor_commision"`
 	DistributorCommision       float64   `json:"distributor_commision"`
 }
+
+type AEPSGetOTPRequestModel struct {
+	ExternalReference        string `json:"externalRef"`
+	OutletID                 string `json:"outletId"`
+	BankIdentificationNumber string `json:"bankin"`
+	Mobile                   string `json:"mobile"`
+	Amount                   string `json:"amount"`
+	Latitude                 string `json:"latitude"`
+	Longitude                string `json:"longitude"`
+	Aadhaar                  string `json:"aadhaar"`
+}

@@ -446,3 +446,65 @@ func (ah *AEPSHandler) GetAEPSTDSDeductionsByMDID(w http.ResponseWriter, r *http
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "aeps tds deductions fetched successfully", "deductions": res})
 }
+
+func (ah *AEPSHandler) GenerateAEPSTransactionOTP(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "generate aeps transaction otp", err)
+		return
+	}
+
+	var req models.AEPSGetOTPRequestModel
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ah.logger, "generate aeps transaction otp", err)
+		return
+	}
+
+	dbdet, err := ah.AEPSStore.GetAEPSDetailsByRetailerID(retailerId)
+	if err != nil {
+		utils.ServerError(w, ah.logger, "generate aeps transaction otp", err)
+		return
+	}
+
+	req.ExternalReference = uuid.NewString()
+	req.OutletID = dbdet.OutletID
+	req.Latitude = dbdet.Latitude
+	req.Longitude = dbdet.Longitude
+
+	res, err := generateOTPRequest(&req)
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "generate aeps transaction otp", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "otp generated successfully", "res": res})
+}
+
+func generateOTPRequest(req *models.AEPSGetOTPRequestModel) (*models.AEPSDailyLoginResponseModel, error) {
+	var res models.AEPSDailyLoginResponseModel
+	if err := utils.PostRequest2(
+		utils.PayntricAPI+utils.AEPSGenerateOTP,
+		"token",
+		utils.PayntricAPIToken,
+		"username",
+		utils.PayntricUsername,
+		map[string]any{
+			"externalRef": req.ExternalReference,
+			"outletId":    req.OutletID,
+			"bankiin":     req.BankIdentificationNumber,
+			"mobile":      req.Mobile,
+			"amount":      req.Amount,
+			"latitude":    req.Latitude,
+			"longitude":   req.Longitude,
+		},
+		&res,
+	); err != nil {
+		return nil, err
+	}
+
+	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
+		return nil, errors.New(res.Message)
+	}
+
+	return &res, nil
+}
