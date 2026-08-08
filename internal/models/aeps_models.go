@@ -109,6 +109,7 @@ type AEPSDailyLoginResponseModel struct {
 	IPayUUID            string `json:"ipayUuid"`
 	ExternalReferenceID string `json:"externalRef"`
 	OutletID            string `json:"outletId"`
+	ReferenceKey        string `json:"referenceKey"`
 	// Data                struct {
 	// 	AdditionalProp1 map[any]any `json:"additionalProp1"`
 	// 	AdditionalProp2 map[any]any `json:"additionalProp2"`
@@ -327,4 +328,5 @@ type AEPSGetOTPRequestModel struct {
 	Latitude                 string `json:"latitude"`
 	Longitude                string `json:"longitude"`
 	Aadhaar                  string `json:"aadhaar"`
+	ReferenceKey             string `json:"referenceKey"`
 }
