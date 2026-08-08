@@ -41,7 +41,8 @@ func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*mod
 			r.retailer_aadhar_number,
 			m.outlet_id,
 			a.latitude,
-			a.longitude
+			a.longitude,
+			a.reference_key
 		FROM retailers r
 		JOIN aeps_merchant_details m ON m.retailer_id = r.retailer_id
 		JOIN aeps_applications a ON a.retailer_id = r.retailer_id
@@ -56,6 +57,7 @@ func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*mod
 		&res.OutletID,
 		&res.Latitude,
 		&res.Longitude,
+		&res.ReferenceKey,
 	); err != nil {
 		return nil, err
 	}

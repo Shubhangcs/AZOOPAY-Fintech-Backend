@@ -328,6 +328,7 @@ func cashWithdrawal(merchantData *models.AEPSDetailsModel, req *models.AEPSCashW
 		utils.PayntricUsername,
 		map[string]any{
 			"requestId":     req.RequestID,
+			"referenceKey":  merchantData.ReferenceKey,
 			"outletId":      merchantData.OutletID,
 			"bankiin":       req.BankIdentificationNumber,
 			"mobile":        req.Mobile,

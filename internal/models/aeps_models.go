@@ -38,6 +38,7 @@ type AEPSDetailsModel struct {
 	OutletID      string `json:"outlet_id"`
 	Latitude      string `json:"latitude"`
 	Longitude     string `json:"longitude"`
+	ReferenceKey  string `json:"reference_key"`
 }
 
 type AEPSMiniStatementRequestModel struct {
