@@ -42,7 +42,7 @@ func (as *PostgresAEPSStore) GetAEPSDetailsByRetailerID(retailerId string) (*mod
 			m.outlet_id,
 			a.latitude,
 			a.longitude,
-			a.reference_key
+			m.reference_key
 		FROM retailers r
 		JOIN aeps_merchant_details m ON m.retailer_id = r.retailer_id
 		JOIN aeps_applications a ON a.retailer_id = r.retailer_id
