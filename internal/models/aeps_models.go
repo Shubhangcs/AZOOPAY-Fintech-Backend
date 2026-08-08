@@ -143,6 +143,7 @@ type AEPSCashWithdrawalRequestModel struct {
 	CustomerName             string                 `json:"customerName"`
 	Aadhaar                  string                 `json:"aadhaar"`
 	BiometricData            AEPSBiometricDataModel `json:"biometricData"`
+	ReferenceKey             string                 `json:"referenceKey"`
 }
 
 type AEPSCashWithdrawalResponseModel struct {
@@ -328,5 +329,4 @@ type AEPSGetOTPRequestModel struct {
 	Latitude                 string `json:"latitude"`
 	Longitude                string `json:"longitude"`
 	Aadhaar                  string `json:"aadhaar"`
-	ReferenceKey             string `json:"referenceKey"`
 }
