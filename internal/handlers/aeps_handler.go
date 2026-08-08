@@ -494,6 +494,7 @@ func generateOTPRequest(req *models.AEPSGetOTPRequestModel) (*models.AEPSDailyLo
 			"bankiin":     req.BankIdentificationNumber,
 			"mobile":      req.Mobile,
 			"amount":      req.Amount,
+			"aadhaar":     req.Aadhaar,
 			"latitude":    req.Latitude,
 			"longitude":   req.Longitude,
 		},
