@@ -503,9 +503,9 @@ func generateOTPRequest(req *models.AEPSGetOTPRequestModel) (*models.AEPSDailyLo
 		return nil, err
 	}
 
-	if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
-		return nil, errors.New(res.Message)
-	}
+	// if res.Status == "FAILED" || res.Status == "FAILURE" || res.Status == "Failure" {
+	// 	return nil, errors.New(res.Message)
+	// }
 
 	return &res, nil
 }
