@@ -260,7 +260,7 @@ func (ps *PostgresPayoutTransactionStore) RefundPayout(payoutTransactionID strin
 	res, err := tx.Exec(`
 		UPDATE payout_transactions
 		SET payout_transaction_status = 'REFUND', updated_at = CURRENT_TIMESTAMP
-		WHERE payout_transaction_id = $1 AND payout_transaction_status = 'FAILED'
+		WHERE payout_transaction_id = $1
 	`, payoutTransactionID)
 	if err != nil {
 		return err
