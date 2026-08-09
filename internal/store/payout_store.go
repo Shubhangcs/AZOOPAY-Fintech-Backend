@@ -225,14 +225,8 @@ func (ps *PostgresPayoutTransactionStore) FinalizePayout(payoutTransactionID, or
 	if err != nil {
 		return err
 	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return errors.New("payout transaction not found or already finalized")
-	}
-	return nil
+	
+	return checkRowsAffected(res)
 }
 
 func (ps *PostgresPayoutTransactionStore) RefundPayout(payoutTransactionID string) error {
