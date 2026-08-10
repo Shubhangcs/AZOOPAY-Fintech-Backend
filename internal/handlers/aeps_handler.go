@@ -478,8 +478,8 @@ func (ah *AEPSHandler) GenerateAEPSTransactionOTP(w http.ResponseWriter, r *http
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "otp generated successfully", "res": res})
 }
 
-func generateOTPRequest(req *models.AEPSGetOTPRequestModel) (*models.AEPSDailyLoginResponseModel, error) {
-	var res models.AEPSDailyLoginResponseModel
+func generateOTPRequest(req *models.AEPSGetOTPRequestModel) (*models.AEPSOTPResponseModel, error) {
+	var res models.AEPSOTPResponseModel
 	if err := utils.PostRequest2(
 		utils.PayntricAPI+utils.AEPSGenerateOTP,
 		"token",
