@@ -110,6 +110,9 @@ type AEPSDailyLoginResponseModel struct {
 	ExternalReferenceID string `json:"externalRef"`
 	OutletID            string `json:"outletId"`
 	ReferenceKey        string `json:"referenceKey"`
+	Data                struct {
+		ReferenceKey string `json:"referenceKey"`
+	} `json:"data"`
 	// Data                struct {
 	// 	AdditionalProp1 map[any]any `json:"additionalProp1"`
 	// 	AdditionalProp2 map[any]any `json:"additionalProp2"`
