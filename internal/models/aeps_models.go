@@ -125,13 +125,13 @@ type AEPSOutletLoginResponseModel struct {
 	IPayUUID            string `json:"ipayUuid"`
 	ExternalReferenceID string `json:"externalRef"`
 	OutletID            string `json:"outletId"`
+	ReferenceKey        string `json:"referenceKey"`
 	// Data                struct {
 	// 	AdditionalProp1 map[any]any `json:"additionalProp1"`
 	// 	AdditionalProp2 map[any]any `json:"additionalProp2"`
 	// 	AdditionalProp3 map[any]any `json:"additionalProp3"`
 	// } `json:"data"`
 }
-
 
 type AEPSOTPResponseModel struct {
 	Status              string `json:"status"`
