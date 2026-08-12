@@ -63,5 +63,5 @@ type ElectricityBillFetchResponse struct {
 	Error      int    `json:"error"`
 	Status     int    `json:"status"`
 	Message    string `json:"msg"`
-	BillAmount any    `json:"billAmount"`
+	BillAmount any    `json:"billDetail"`
 }
