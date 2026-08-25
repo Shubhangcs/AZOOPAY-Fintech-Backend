@@ -453,11 +453,11 @@ func aepsRoutes(router *chi.Mux, app *app.Application) {
 
 func ccBillRoutes(router *chi.Mux, app *app.Application) {
 	router.Route("/cc", func(r chi.Router) {
-		router.Get("/operators", app.CCHandler.HandleGetCCOperators)
-		router.Get("/bene/{id}", app.CCHandler.HandleGetCreditCardBeneficiariesByRetailerID)
-		router.Post("/create", app.CCHandler.HandleCreateCCBeneficiary)
-		router.Put("/update", app.CCHandler.HandleUpdateCCBeneficiary)
-		router.Delete("/delete/{id}", app.CCHandler.HandleDeleteCCBeneficiary)
-		router.Post("/create/transaction/{id}", app.CCHandler.HandleCreditCardPayment)
+		r.Get("/operators", app.CCHandler.HandleGetCCOperators)
+		r.Get("/bene/{id}", app.CCHandler.HandleGetCreditCardBeneficiariesByRetailerID)
+		r.Post("/create", app.CCHandler.HandleCreateCCBeneficiary)
+		r.Put("/update", app.CCHandler.HandleUpdateCCBeneficiary)
+		r.Delete("/delete/{id}", app.CCHandler.HandleDeleteCCBeneficiary)
+		r.Post("/create/transaction/{id}", app.CCHandler.HandleCreditCardPayment)
 	})
 }
