@@ -256,7 +256,7 @@ func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransa
 		Reason:        "CC_BILL_PAYMENT",
 		Remarks:       fmt.Sprintf("Credit Card Bill Payment By Retailer: %s For Beneficiary: %s", data.BeneDetails.RetailerID, data.BeneDetails.BeneficiaryName),
 		userTableInfo: *userTableInfo,
-	}, &cc.wts); err != nil {
+	}, cc.wts); err != nil {
 		return 0, err
 	}
 
