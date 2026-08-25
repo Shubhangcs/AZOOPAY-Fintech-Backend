@@ -38,6 +38,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	dashboardRoutes(router, app)
 	aepsOnboardingRoutes(router, app)
 	aepsRoutes(router, app)
+	ccBillRoutes(router, app)
 
 	return router
 }
@@ -441,11 +442,22 @@ func aepsRoutes(router *chi.Mux, app *app.Application) {
 
 		r.Get("/transactions", app.AEPSHandler.GetAllAEPSTransactions)
 		r.Get("/transactions/retailer/{id}", app.AEPSHandler.GetAEPSTransactionsByRetailerID)
-		r.Post("/transaction/otp/{id}" , app.AEPSHandler.GenerateAEPSTransactionOTP)
+		r.Post("/transaction/otp/{id}", app.AEPSHandler.GenerateAEPSTransactionOTP)
 
 		r.Get("/tds", app.AEPSHandler.GetAllAEPSTDSDeductions)
 		r.Get("/tds/retailer/{id}", app.AEPSHandler.GetAEPSTDSDeductionsByRetailerID)
 		r.Get("/tds/distributor/{id}", app.AEPSHandler.GetAEPSTDSDeductionsByDistributorID)
 		r.Get("/tds/md/{id}", app.AEPSHandler.GetAEPSTDSDeductionsByMDID)
+	})
+}
+
+func ccBillRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/cc", func(r chi.Router) {
+		router.Get("/operators", app.CCHandler.HandleGetCCOperators)
+		router.Get("/bene/{id}", app.CCHandler.HandleGetCreditCardBeneficiariesByRetailerID)
+		router.Post("/create", app.CCHandler.HandleCreateCCBeneficiary)
+		router.Put("/update", app.CCHandler.HandleUpdateCCBeneficiary)
+		router.Delete("/delete/{id}", app.CCHandler.HandleDeleteCCBeneficiary)
+		router.Post("/create/transaction/{id}", app.CCHandler.HandleCreditCardPayment)
 	})
 }

@@ -37,6 +37,7 @@ type Application struct {
 	DashboardHandler         *handlers.DashboardHandler
 	AEPSOnboardingHandler    *handlers.AEPSOnboardingHandler
 	AEPSHandler              *handlers.AEPSHandler
+	CCHandler                *handlers.CCHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -76,6 +77,7 @@ func NewApplication() (*Application, error) {
 	dashboardStore := store.NewPostgresDashboardStore(pgdb)
 	aepsOnboardingStore := store.NewPostgresAEPSOnboardingStore(pgdb)
 	aepsStore := store.NewPostgresAEPSStore(pgdb, commisionStore, walletTransactionStore)
+	ccBillStore := store.NewPostgresCreditCardPaymentStore(pgdb, *walletTransactionStore)
 
 	// Handlers
 	apiDownHandler := handlers.NewApiDownHandler(apiDownStore, logger)
@@ -101,6 +103,7 @@ func NewApplication() (*Application, error) {
 	dashboardHandler := handlers.NewDashboardHandler(dashboardStore, logger)
 	aepsOnboardingHandler := handlers.NewAEPSOnboardingHandler(logger, aepsOnboardingStore)
 	aepsHandler := handlers.NewAEPSHandler(aepsStore, logger)
+	ccHandler := handlers.NewCCHandler(logger, ccBillStore)
 
 	return &Application{
 		Logger:                   logger,
@@ -128,6 +131,7 @@ func NewApplication() (*Application, error) {
 		DashboardHandler:         dashboardHandler,
 		AEPSOnboardingHandler:    aepsOnboardingHandler,
 		AEPSHandler:              aepsHandler,
+		CCHandler:                ccHandler,
 	}, nil
 
 }

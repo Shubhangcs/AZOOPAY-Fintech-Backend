@@ -41,9 +41,9 @@ type GetCreditCardBeneficiaryDetailsResponseModel struct {
 }
 
 type CreateCreditCardPaymentTransactionRequestModel struct {
-	BeneDetails      GetCreditCardBeneficiaryDetailsResponseModel
-	Amount           string `json:"amount"`
-	PartnerRequestID string `json:"partner_request_id"`
+	BeneDetails      *GetCreditCardBeneficiaryDetailsResponseModel
+	Amount           float64 `json:"amount"`
+	PartnerRequestID string  `json:"partner_request_id"`
 }
 
 type UpdateCreditCardPaymentTransactionRequestModel struct {
@@ -54,9 +54,23 @@ type UpdateCreditCardPaymentTransactionRequestModel struct {
 }
 
 type CardProviderDetailsModel struct {
-	OperatorID           string `json:"operator_id"`
-	OperatorName         string `json:"operator_name"`
-	ServiceName          string `json:"service_name"`
-	OperatorCategory     string `json:"operator_category"`
-	OperatorCategoryName string `json:"operator_category_name"`
+	Error        int    `json:"error"`
+	Message      string `json:"msg"`
+	Status       int    `json:"status"`
+	OperatorList []struct {
+		OperatorID           string `json:"operator_id"`
+		OperatorName         string `json:"operator_name"`
+		ServiceName          string `json:"service_name"`
+		OperatorCategory     string `json:"operator_category"`
+		OperatorCategoryName string `json:"operator_category_name"`
+	} `json:"operatorList"`
+}
+
+type CreditCardBillPaymentAPIResponse struct {
+	Error                 int    `json:"error"`
+	Message               string `json:"msg"`
+	Status                int    `json:"status"`
+	OrderID               string `json:"order_id"`
+	OperatorTransactionID string `json:"optransid"`
+	PartnerRequestID      string `json:"partnerreqid"`
 }

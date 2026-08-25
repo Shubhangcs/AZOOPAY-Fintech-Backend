@@ -2,20 +2,30 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/levionstudio/fintech/internal/models"
 )
 
 type CreditCardPaymentStore interface {
+	CreateCreditCardBeneficiary(data *models.CreateCreditCardBeneficiaryRequestModel) error
+	UpdateCreditCardBeneficiary(data *models.UpdateCreditCardBeneficiaryRequestModel) error
+	DeleteCreditCardBeneficiary(beneficiaryId int64) error
+	GetBeneficiariesByRetailerID(retailerId string) ([]models.GetCreditCardBeneficiaryDetailsResponseModel, error)
+	GetBeneficiaryByBeneficiaryID(beneficiaryId int64) (*models.GetCreditCardBeneficiaryDetailsResponseModel, error)
+	InitilizeCreateCreditCardPaymentTransaction(data *models.CreateCreditCardPaymentTransactionRequestModel) (int64, error)
+	FinilizeCreateCreditCardPaymentTransaction(transactionId int64, res *models.CreditCardBillPaymentAPIResponse) error
 }
 
 type PostgresCreditCardPaymentStore struct {
-	db *sql.DB
+	db  *sql.DB
+	wts PostgresWalletTransactionStore
 }
 
-func NewPostgresCreditCardPaymentStore(db *sql.DB) *PostgresCreditCardPaymentStore {
+func NewPostgresCreditCardPaymentStore(db *sql.DB, wts PostgresWalletTransactionStore) *PostgresCreditCardPaymentStore {
 	return &PostgresCreditCardPaymentStore{
 		db,
+		wts,
 	}
 }
 
@@ -160,7 +170,7 @@ func (cc *PostgresCreditCardPaymentStore) GetBeneficiariesByRetailerID(retailerI
 	return benes, nil
 }
 
-func (cc *PostgresCreditCardPaymentStore) GetBeneficiaryByBeneficiaryID(beneficiaryId string) (*models.GetCreditCardBeneficiaryDetailsResponseModel, error) {
+func (cc *PostgresCreditCardPaymentStore) GetBeneficiaryByBeneficiaryID(beneficiaryId int64) (*models.GetCreditCardBeneficiaryDetailsResponseModel, error) {
 	query := `
 		SELECT
 			beneficiary_id,
@@ -203,6 +213,90 @@ func (cc *PostgresCreditCardPaymentStore) GetBeneficiaryByBeneficiaryID(benefici
 	return &bene, nil
 }
 
-func (cc *PostgresCreditCardPaymentStore) CreateCreditCardPaymentTransaction() {
-	
+func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransaction(data *models.CreateCreditCardPaymentTransactionRequestModel) (int64, error) {
+	tx, err := cc.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	query := `
+		INSERT INTO credit_card_payment_transactions(
+			retailer_id,
+			beneficiary_id,
+			amount,
+			status,
+			partner_request_id
+		) VALUES (
+			$1 , $2 , $3 , $4 , $5
+		) RETURNING transaction_id;
+	`
+
+	var ccTransactionId int64
+	if err := tx.QueryRow(
+		query,
+		data.BeneDetails.RetailerID,
+		data.BeneDetails.BeneficiaryID,
+		data.Amount,
+		"PENDING",
+		data.PartnerRequestID,
+	).Scan(&ccTransactionId); err != nil {
+		return 0, err
+	}
+
+	userTableInfo, err := getUserTableInfo(data.BeneDetails.RetailerID)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := debitTx(tx, transaction{
+		UserID:        data.BeneDetails.RetailerID,
+		ReferenceID:   fmt.Sprintf("%d", ccTransactionId),
+		Amount:        data.Amount,
+		Reason:        "CC_BILL_PAYMENT",
+		Remarks:       fmt.Sprintf("Credit Card Bill Payment By Retailer: %s For Beneficiary: %s", data.BeneDetails.RetailerID, data.BeneDetails.BeneficiaryName),
+		userTableInfo: *userTableInfo,
+	}, &cc.wts); err != nil {
+		return 0, err
+	}
+
+	return ccTransactionId, tx.Commit()
+}
+
+func (cc *PostgresCreditCardPaymentStore) FinilizeCreateCreditCardPaymentTransaction(transactionId int64, res *models.CreditCardBillPaymentAPIResponse) error {
+	var query string
+	switch res.Status {
+	case 1:
+		query = fmt.Sprintf(`
+			UPDATE credit_card_payment_transactions
+			SET transaction_status = %s,
+				order_id = %s,
+				operator_transaction_id = %s,
+				updated_at = NOW()
+			WHERE transaction_id = %d;
+		`, "SUCCESS", res.OrderID, res.OperatorTransactionID, transactionId)
+	case 2:
+		query = fmt.Sprintf(`
+			UPDATE credit_card_payment_transactions
+			SET transaction_status = %s,
+				order_id = %s,
+				updated_at = NOW()
+			WHERE transaction_id = %d;
+		`, "PENDING", res.OrderID, transactionId)
+	case 3:
+		query = fmt.Sprintf(`
+			UPDATE credit_card_payment_transactions
+			SET transaction_status = %s,
+				order_id = %s,
+				updated_at = NOW()
+			WHERE transaction_id = %d;
+		`, "FAILED", res.OrderID, transactionId)
+	}
+
+	dbres, err := cc.db.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(dbres)
 }

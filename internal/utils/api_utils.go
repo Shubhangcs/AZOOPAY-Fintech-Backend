@@ -45,6 +45,8 @@ const (
 	AEPSBalanceEnquiry          = "/aeps/balance-enquiry"
 	AEPSBankList                = "/aeps/banks"
 	AEPSGenerateOTP             = "/aeps/transaction-otp"
+	CCOperatorsFetch            = "/recharge/servicewiseOperatorFetch"
+	CCBillPayment               = "/rkitcc/v3/ccPayment"
 )
 
 var apiHTTPClient = &http.Client{Timeout: 70 * time.Second}
