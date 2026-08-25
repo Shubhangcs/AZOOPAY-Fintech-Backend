@@ -19,10 +19,10 @@ type CreditCardPaymentStore interface {
 
 type PostgresCreditCardPaymentStore struct {
 	db  *sql.DB
-	wts PostgresWalletTransactionStore
+	wts *PostgresWalletTransactionStore
 }
 
-func NewPostgresCreditCardPaymentStore(db *sql.DB, wts PostgresWalletTransactionStore) *PostgresCreditCardPaymentStore {
+func NewPostgresCreditCardPaymentStore(db *sql.DB, wts *PostgresWalletTransactionStore) *PostgresCreditCardPaymentStore {
 	return &PostgresCreditCardPaymentStore{
 		db,
 		wts,
