@@ -453,6 +453,8 @@ func aepsRoutes(router *chi.Mux, app *app.Application) {
 
 func ccBillRoutes(router *chi.Mux, app *app.Application) {
 	router.Route("/cc", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
 		r.Get("/operators", app.CCHandler.HandleGetCCOperators)
 		r.Get("/bene/{id}", app.CCHandler.HandleGetCreditCardBeneficiariesByRetailerID)
 		r.Post("/create", app.CCHandler.HandleCreateCCBeneficiary)

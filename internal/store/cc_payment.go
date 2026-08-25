@@ -263,37 +263,59 @@ func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransa
 	return ccTransactionId, tx.Commit()
 }
 
-func (cc *PostgresCreditCardPaymentStore) FinilizeCreateCreditCardPaymentTransaction(transactionId int64, res *models.CreditCardBillPaymentAPIResponse) error {
-	var query string
+func (cc *PostgresCreditCardPaymentStore) FinalizeCreateCreditCardPaymentTransaction(
+	transactionID int64,
+	res *models.CreditCardBillPaymentAPIResponse,
+) error {
+
+	var status string
+
 	switch res.Status {
 	case 1:
-		query = fmt.Sprintf(`
-			UPDATE credit_card_payment_transactions
-			SET transaction_status = %s,
-				order_id = %s,
-				operator_transaction_id = %s,
-				updated_at = NOW()
-			WHERE transaction_id = %d;
-		`, "SUCCESS", res.OrderID, res.OperatorTransactionID, transactionId)
+		status = "SUCCESS"
 	case 2:
-		query = fmt.Sprintf(`
-			UPDATE credit_card_payment_transactions
-			SET transaction_status = %s,
-				order_id = %s,
-				updated_at = NOW()
-			WHERE transaction_id = %d;
-		`, "PENDING", res.OrderID, transactionId)
+		status = "PENDING"
 	case 3:
-		query = fmt.Sprintf(`
-			UPDATE credit_card_payment_transactions
-			SET transaction_status = %s,
-				order_id = %s,
-				updated_at = NOW()
-			WHERE transaction_id = %d;
-		`, "FAILED", res.OrderID, transactionId)
+		status = "FAILED"
+	default:
+		return fmt.Errorf("invalid payment status: %d", res.Status)
 	}
 
-	dbres, err := cc.db.Exec(query)
+	query := `
+		UPDATE credit_card_payment_transactions
+		SET
+			status = $1,
+			order_id = $2,
+			updated_at = NOW()
+		WHERE transaction_id = $3
+	`
+
+	args := []any{
+		status,
+		res.OrderID,
+		transactionID,
+	}
+
+	if res.Status == 1 {
+		query = `
+			UPDATE credit_card_payment_transactions
+			SET
+				status = $1,
+				order_id = $2,
+				operator_transaction_id = $3,
+				updated_at = NOW()
+			WHERE transaction_id = $4
+		`
+
+		args = []any{
+			status,
+			res.OrderID,
+			res.OperatorTransactionID,
+			transactionID,
+		}
+	}
+
+	dbres, err := cc.db.Exec(query, args...)
 	if err != nil {
 		return err
 	}

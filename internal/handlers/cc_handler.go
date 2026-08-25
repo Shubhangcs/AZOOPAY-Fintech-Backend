@@ -132,6 +132,7 @@ func (ch *CCHandler) HandleCreditCardPayment(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		utils.BadRequest(w, ch.logger, "credit card payment", err)
+		return
 	} else if err != nil && res == nil {
 		utils.ServerError(w, ch.logger, "credit card payment", err)
 		return
