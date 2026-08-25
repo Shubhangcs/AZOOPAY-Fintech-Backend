@@ -61,7 +61,7 @@ type CardProviderDetailsModel struct {
 		OperatorID           int64  `json:"operator_id"`
 		OperatorName         string `json:"operator_name"`
 		ServiceName          string `json:"service_name"`
-		OperatorCategory     string `json:"operator_category"`
+		OperatorCategory     int64  `json:"operator_category"`
 		OperatorCategoryName string `json:"operator_category_name"`
 	} `json:"operatorList"`
 }
