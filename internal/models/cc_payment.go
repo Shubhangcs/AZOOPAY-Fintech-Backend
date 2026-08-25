@@ -58,7 +58,7 @@ type CardProviderDetailsModel struct {
 	Message      string `json:"msg"`
 	Status       int    `json:"status"`
 	OperatorList []struct {
-		OperatorID           string `json:"operator_id"`
+		OperatorID           int64  `json:"operator_id"`
 		OperatorName         string `json:"operator_name"`
 		ServiceName          string `json:"service_name"`
 		OperatorCategory     string `json:"operator_category"`
