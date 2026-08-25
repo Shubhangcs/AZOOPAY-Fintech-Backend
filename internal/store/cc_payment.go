@@ -14,7 +14,10 @@ type CreditCardPaymentStore interface {
 	GetBeneficiariesByRetailerID(retailerId string) ([]models.GetCreditCardBeneficiaryDetailsResponseModel, error)
 	GetBeneficiaryByBeneficiaryID(beneficiaryId int64) (*models.GetCreditCardBeneficiaryDetailsResponseModel, error)
 	InitilizeCreateCreditCardPaymentTransaction(data *models.CreateCreditCardPaymentTransactionRequestModel) (int64, error)
-	FinilizeCreateCreditCardPaymentTransaction(transactionId int64, res *models.CreditCardBillPaymentAPIResponse) error
+	FinalizeCreateCreditCardPaymentTransaction(
+		transactionID int64,
+		res *models.CreditCardBillPaymentAPIResponse,
+	) error
 }
 
 type PostgresCreditCardPaymentStore struct {

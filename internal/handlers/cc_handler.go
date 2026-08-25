@@ -127,7 +127,7 @@ func (ch *CCHandler) HandleCreditCardPayment(w http.ResponseWriter, r *http.Requ
 
 	res, err := creditCardPayment(&req)
 	if err != nil && res != nil {
-		if err := ch.ccstore.FinilizeCreateCreditCardPaymentTransaction(transactionId, res); err != nil {
+		if err := ch.ccstore.FinalizeCreateCreditCardPaymentTransaction(transactionId, res); err != nil {
 			utils.ServerError(w, ch.logger, "credit card payment", err)
 			return
 		}
@@ -138,7 +138,7 @@ func (ch *CCHandler) HandleCreditCardPayment(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := ch.ccstore.FinilizeCreateCreditCardPaymentTransaction(transactionId, res); err != nil {
+	if err := ch.ccstore.FinalizeCreateCreditCardPaymentTransaction(transactionId, res); err != nil {
 		utils.ServerError(w, ch.logger, "credit card payment", err)
 		return
 	}
