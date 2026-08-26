@@ -37,7 +37,7 @@ func (ch *CCHandler) HandleGetCCOperators(w http.ResponseWriter, r *http.Request
 func getCCOperators() (*models.CardProviderDetailsModel, error) {
 	var res models.CardProviderDetailsModel
 	if err := utils.GetRequest(
-		utils.RechargeKitAPI2+utils.CCOperatorsFetch+"?operator_category=11",
+		utils.RechargeKitAPI2+utils.CCOperatorsFetch,
 		"Authorization",
 		"Bearer "+utils.RechargeKitAPIToken,
 		&res,
