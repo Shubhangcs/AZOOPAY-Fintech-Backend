@@ -658,7 +658,7 @@ func (rh *RetailerHandler) HandleClaimRefund(w http.ResponseWriter, r *http.Requ
 	}
 
 	var req struct {
-		mpin int64
+		Mpin int64 `json:"mpin"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -666,7 +666,7 @@ func (rh *RetailerHandler) HandleClaimRefund(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := rh.retailerStore.ClaimRefund(retailerId, req.mpin); err != nil {
+	if err := rh.retailerStore.ClaimRefund(retailerId, req.Mpin); err != nil {
 		utils.ServerError(w, rh.logger, "claim refund", err)
 		return
 	}

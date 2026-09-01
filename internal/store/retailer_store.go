@@ -703,7 +703,7 @@ func (rs *PostgresRetailerStore) GetRefundWalletBalance(id string) (float64, err
 		WHERE retailer_id=$1;
 	`
 	var refundAmount float64
-	err := rs.db.QueryRow(query).Scan(&refundAmount)
+	err := rs.db.QueryRow(query, id).Scan(&refundAmount)
 
 	return refundAmount, err
 }
