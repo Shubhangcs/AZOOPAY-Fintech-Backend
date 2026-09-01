@@ -127,6 +127,8 @@ func retailerRoutes(router *chi.Mux, app *app.Application) {
 		r.Patch("/update/{id}/image/shop", app.RetailerHandler.HandleUpdateRetailerShopImage)
 		r.Patch("/update/{id}/hold-amount", app.RetailerHandler.HandleUpdateRetailerHoldAmount)
 		r.Delete("/delete/{id}", app.RetailerHandler.HandleDeleteRetailer)
+		r.Get("/get/refund-wallet-balance/{id}" , app.RetailerHandler.HandleGetRefundWalletBalance)
+		r.Post("/claim/refund-wallet-balance/{id}" , app.RetailerHandler.HandleClaimRefund)
 	})
 }
 
