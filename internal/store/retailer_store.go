@@ -42,6 +42,8 @@ type RetailerStore interface {
 	UpdateRetailerShopImage(path, id string) error
 	GetRetailerWalletBalance(id string) (float64, error)
 	UpdateRetailerHoldAmount(id string, amount float64) error
+	ClaimRefund(id string, mpin int64) error
+	GetRefundWalletBalance(id string) (float64, error)
 }
 
 // Create Retailer
@@ -656,4 +658,52 @@ func (rs *PostgresRetailerStore) UpdateRetailerHoldAmount(id string, amount floa
 		return err
 	}
 	return checkRowsAffected(res)
+}
+
+func (rs *PostgresRetailerStore) ClaimRefund(id string, mpin int64) error {
+	tx, err := rs.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	getRefundAmountQuery := `
+		SELECT refund_wallet
+		FROM retailers 
+		WHERE retailer_id=$1 AND mpin=$2;
+	`
+	var refundAmount float64
+	if err := tx.QueryRow(getRefundAmountQuery, id, mpin).Scan(&refundAmount); err != nil {
+		return err
+	}
+
+	updateRetailerWallet := `
+		UPDATE retailers
+		SET retailer_wallet_balance = retailer_wallet_balance + $1,
+			refund_wallet = refund_wallet - $1,
+			updated_at = NOW()
+		WHERE retailer_id = $2;
+	`
+	res, err := tx.Exec(updateRetailerWallet, refundAmount, id)
+	if err != nil {
+		return err
+	}
+
+	if err := checkRowsAffected(res); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (rs *PostgresRetailerStore) GetRefundWalletBalance(id string) (float64, error) {
+	query := `
+		SELECT refund_wallet
+		FROM retailers
+		WHERE retailer_id=$1;
+	`
+	var refundAmount float64
+	err := rs.db.QueryRow(query).Scan(&refundAmount)
+
+	return refundAmount, err
 }

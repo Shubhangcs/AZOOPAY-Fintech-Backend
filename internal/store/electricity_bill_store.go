@@ -162,19 +162,44 @@ func (es *PostgresElectricityBillStore) RefundElectricityBill(id int64) error {
 	refID := fmt.Sprintf("%d", id)
 	remarks := fmt.Sprintf("Electricity bill refund | Ref: %s", refID)
 
-	retailerInfo, err := getUserTableInfo(eb.RetailerID)
-	if err != nil {
+	// retailerInfo, err := getUserTableInfo(eb.RetailerID)
+	// if err != nil {
+	// 	return err
+	// }
+
+	refundQuery := `
+		UPDATE retailers
+		SET refund_wallet = refund_wallet + $1,
+			updated_at = NOW()
+		WHERE retailer_id=$2
+		RETURNING refund_wallet;
+	`
+	var refundAfterBalance float64
+	if err = tx.QueryRow(refundQuery , eb.Amount , eb.RetailerID).Scan(
+		&refundAfterBalance,
+	);err != nil {
 		return err
 	}
 
-	// Credit full bill amount back to retailer (no commission to reverse).
-	if err = creditTx(tx, transaction{
-		UserID: eb.RetailerID, ReferenceID: refID,
-		Amount: eb.Amount, Reason: "ELECTRICITY_BILL_PAYMENT_REFUND", Remarks: remarks,
-		userTableInfo: *retailerInfo,
-	}, es.walletStore); err != nil {
+	if err := es.walletStore.CreateWalletTransactionTx(tx , &models.WalletTransactionModel{
+		UserID: eb.RetailerID,
+		ReferenceID: refID,
+		CreditAmount: &eb.Amount,
+		BeforeBalance: refundAfterBalance - eb.Amount,
+		AfterBalance: refundAfterBalance,
+		TransactionReason: "ELECTRICITY_BILL_PAYMENT_REFUND",
+		Remarks: remarks,
+	}); err != nil {
 		return err
 	}
+	// Credit full bill amount back to retailer (no commission to reverse).
+	// if err = creditTx(tx, transaction{
+	// 	UserID: eb.RetailerID, ReferenceID: refID,
+	// 	Amount: eb.Amount, Reason: "ELECTRICITY_BILL_PAYMENT_REFUND", Remarks: remarks,
+	// 	userTableInfo: *retailerInfo,
+	// }, es.walletStore); err != nil {
+	// 	return err
+	// }
 
 	return tx.Commit()
 }

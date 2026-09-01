@@ -649,3 +649,43 @@ func (rh *RetailerHandler) HandleUpdateRetailerHoldAmount(w http.ResponseWriter,
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "retailer hold amount updated successfully"})
 }
+
+func (rh *RetailerHandler) HandleClaimRefund(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, "claim refund", err)
+		return
+	}
+
+	var req struct {
+		mpin int64
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, rh.logger, "claim refund", err)
+		return
+	}
+
+	if err := rh.retailerStore.ClaimRefund(retailerId, req.mpin); err != nil {
+		utils.ServerError(w, rh.logger, "claim refund", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "refund claimed successfully"})
+}
+
+func (rh *RetailerHandler) HandleGetRefundWalletBalance(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, rh.logger, "get refund wallet balance", err)
+		return
+	}
+
+	balance, err := rh.retailerStore.GetRefundWalletBalance(retailerId)
+	if err != nil {
+		utils.ServerError(w, rh.logger, "get refund wallet balance", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "refund wallet balance fetched successfully", "balance": balance})
+}

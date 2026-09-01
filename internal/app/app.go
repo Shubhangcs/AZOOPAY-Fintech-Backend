@@ -38,6 +38,7 @@ type Application struct {
 	AEPSOnboardingHandler    *handlers.AEPSOnboardingHandler
 	AEPSHandler              *handlers.AEPSHandler
 	CCHandler                *handlers.CCHandler
+	UPIATMHandler            *handlers.UPIATMHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -78,6 +79,7 @@ func NewApplication() (*Application, error) {
 	aepsOnboardingStore := store.NewPostgresAEPSOnboardingStore(pgdb)
 	aepsStore := store.NewPostgresAEPSStore(pgdb, commisionStore, walletTransactionStore)
 	ccBillStore := store.NewPostgresCreditCardPaymentStore(pgdb, walletTransactionStore)
+	upiAtmStore := store.NewPostgresUPIATMStore(pgdb)
 
 	// Handlers
 	apiDownHandler := handlers.NewApiDownHandler(apiDownStore, logger)
@@ -102,8 +104,9 @@ func NewApplication() (*Application, error) {
 	statsHandler := handlers.NewStatsHandler(statsStore, logger)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardStore, logger)
 	aepsOnboardingHandler := handlers.NewAEPSOnboardingHandler(logger, aepsOnboardingStore)
-	aepsHandler := handlers.NewAEPSHandler(aepsStore, logger)
+	aepsHandler := handlers.NewAEPSHandler(aepsStore, logger, apiDownStore)
 	ccHandler := handlers.NewCCHandler(logger, ccBillStore)
+	upiAtmHandler := handlers.NewUPIATMHandler(logger, upiAtmStore, aepsStore)
 
 	return &Application{
 		Logger:                   logger,
@@ -132,6 +135,7 @@ func NewApplication() (*Application, error) {
 		AEPSOnboardingHandler:    aepsOnboardingHandler,
 		AEPSHandler:              aepsHandler,
 		CCHandler:                ccHandler,
+		UPIATMHandler:            upiAtmHandler,
 	}, nil
 
 }

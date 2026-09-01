@@ -311,15 +311,29 @@ func (ps *PostgresPayoutTransactionStore) RefundPayout(payoutTransactionID strin
 
 	// Credit full amount + all commissions back to retailer
 	totalRefund := pt.Amount + pt.AdminCommision + pt.MasterDistributorCommision + pt.DistributorCommision + pt.RetailerCommision
-	retailerInfo, err := getUserTableInfo(pt.RetailerID)
-	if err != nil {
+	refundQuery := `
+		UPDATE retailers
+		SET refund_wallet = refund_wallet + $1,
+			updated_at = NOW()
+		WHERE retailer_id=$2
+		RETURNING refund_wallet;
+	`
+	var refundAfterBalance float64
+	if err = tx.QueryRow(refundQuery , totalRefund , pt.RetailerID).Scan(
+		&refundAfterBalance,
+	);err != nil {
 		return err
 	}
-	if err = creditTx(tx, transaction{
-		UserID: pt.RetailerID, ReferenceID: refID,
-		Amount: totalRefund, Reason: "PAYOUT_REFUND", Remarks: retailerRemarks,
-		userTableInfo: *retailerInfo,
-	}, ps.walletStore); err != nil {
+
+	if err := ps.walletStore.CreateWalletTransactionTx(tx , &models.WalletTransactionModel{
+		UserID: pt.RetailerID,
+		ReferenceID: refID,
+		CreditAmount: &totalRefund,
+		BeforeBalance: refundAfterBalance - totalRefund,
+		AfterBalance: refundAfterBalance,
+		TransactionReason: "PAYOUT_REFUND",
+		Remarks: retailerRemarks,
+	}); err != nil {
 		return err
 	}
 

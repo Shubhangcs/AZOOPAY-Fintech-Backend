@@ -237,14 +237,40 @@ func (ms *PostgresMobileRechargeStore) RefundMobileRecharge(id int64) error {
 		}
 	}
 
-	// Credit full recharge amount back to retailer.
-	if err = creditTx(tx, transaction{
-		UserID: mr.RetailerID, ReferenceID: refID,
-		Amount: mr.Amount, Reason: "MOBILE_RECHARGE_REFUND", Remarks: remarks,
-		userTableInfo: *retailerInfo,
-	}, ms.walletStore); err != nil {
+	refundQuery := `
+		UPDATE retailers
+		SET refund_wallet = refund_wallet + $1,
+			updated_at = NOW()
+		WHERE retailer_id=$2
+		RETURNING refund_wallet;
+	`
+	var refundAfterBalance float64
+	if err = tx.QueryRow(refundQuery, mr.Amount, mr.RetailerID).Scan(
+		&refundAfterBalance,
+	); err != nil {
 		return err
 	}
+
+	if err := ms.walletStore.CreateWalletTransactionTx(tx, &models.WalletTransactionModel{
+		UserID:            mr.RetailerID,
+		ReferenceID:       refID,
+		CreditAmount:      &mr.Amount,
+		BeforeBalance:     refundAfterBalance - mr.Amount,
+		AfterBalance:      refundAfterBalance,
+		TransactionReason: "MOBILE_RECHARGE_REFUND",
+		Remarks:           remarks,
+	}); err != nil {
+		return err
+	}
+
+	// Credit full recharge amount back to retailer.
+	// if err = creditTx(tx, transaction{
+	// 	UserID: mr.RetailerID, ReferenceID: refID,
+	// 	Amount: mr.Amount, Reason: "MOBILE_RECHARGE_REFUND", Remarks: remarks,
+	// 	userTableInfo: *retailerInfo,
+	// }, ms.walletStore); err != nil {
+	// 	return err
+	// }
 
 	return tx.Commit()
 }

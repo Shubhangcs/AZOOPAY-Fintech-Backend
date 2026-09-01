@@ -39,6 +39,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	aepsOnboardingRoutes(router, app)
 	aepsRoutes(router, app)
 	ccBillRoutes(router, app)
+	upiAtmRoutes(router, app)
 
 	return router
 }
@@ -461,5 +462,16 @@ func ccBillRoutes(router *chi.Mux, app *app.Application) {
 		r.Put("/update", app.CCHandler.HandleUpdateCCBeneficiary)
 		r.Delete("/delete/{id}", app.CCHandler.HandleDeleteCCBeneficiary)
 		r.Post("/create/transaction/{id}", app.CCHandler.HandleCreditCardPayment)
+	})
+}
+
+func upiAtmRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/upi-atm", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
+		r.Post("/create-qr/{id}", app.UPIATMHandler.HandleCreateUPIQR)
+		r.Post("/qr-status", app.UPIATMHandler.HandleCheckQRTransactionStatus)
+		r.Get("/get", app.UPIATMHandler.HandleGetAllUPIATMTransactions)
+		r.Get("/get/{id}", app.UPIATMHandler.HandleGetUPIATMTransactionsByRetailerID)
 	})
 }

@@ -13,14 +13,16 @@ import (
 )
 
 type AEPSHandler struct {
-	AEPSStore store.AEPSStore
-	logger    *slog.Logger
+	AEPSStore    store.AEPSStore
+	logger       *slog.Logger
+	apiDownStore store.ApiDownStore
 }
 
-func NewAEPSHandler(AEPSStore store.AEPSStore, logger *slog.Logger) *AEPSHandler {
+func NewAEPSHandler(AEPSStore store.AEPSStore, logger *slog.Logger, apiDownStore store.ApiDownStore) *AEPSHandler {
 	return &AEPSHandler{
 		AEPSStore,
 		logger,
+		apiDownStore,
 	}
 }
 
@@ -114,6 +116,13 @@ func aepsDailyLogin(req *models.AEPSDetailsModel, bd *models.AEPSDailyLoginReque
 }
 
 func (ah *AEPSHandler) CheckAEPSDailyLoginStatus(w http.ResponseWriter, r *http.Request) {
+	if down, err := ah.apiDownStore.IsServiceDown(models.ServiceAEPS); err != nil {
+		utils.ServerError(w, ah.logger, "check aeps daily login", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ah.logger, "check aeps daily login", errors.New("aeps is currently unavailable"))
+		return
+	}
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, ah.logger, "check aeps daily login", err)
@@ -161,6 +170,13 @@ func checkAEPSDailyLoginStatus(req *models.AEPSDetailsModel) (*models.AEPSDailyL
 }
 
 func (ah *AEPSHandler) GetMiniStatement(w http.ResponseWriter, r *http.Request) {
+	if down, err := ah.apiDownStore.IsServiceDown(models.ServiceAEPS); err != nil {
+		utils.ServerError(w, ah.logger, "get aeps mini statement", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ah.logger, "get aeps mini statement", errors.New("aeps is currently unavailable"))
+		return
+	}
 	var req models.AEPSMiniStatementRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, ah.logger, "aeps mini statement", err)
@@ -218,6 +234,13 @@ func getMiniStatement(retailerData *models.AEPSDetailsModel, req *models.AEPSMin
 }
 
 func (ah *AEPSHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
+	if down, err := ah.apiDownStore.IsServiceDown(models.ServiceAEPS); err != nil {
+		utils.ServerError(w, ah.logger, "get aeps balance", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ah.logger, "get aeps balance", errors.New("aeps is currently unavailable"))
+		return
+	}
 	var req models.AEPSBalanceEnquiryRequestModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, ah.logger, "aeps balance enquiry", err)
@@ -275,6 +298,13 @@ func getBalance(retailerData *models.AEPSDetailsModel, req *models.AEPSBalanceEn
 }
 
 func (ah *AEPSHandler) CashWithdrawal(w http.ResponseWriter, r *http.Request) {
+	if down, err := ah.apiDownStore.IsServiceDown(models.ServiceAEPS); err != nil {
+		utils.ServerError(w, ah.logger, "aeps cash withdrawal", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ah.logger, "aeps cash withdrawal", errors.New("aeps is currently unavailable"))
+		return
+	}
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, ah.logger, "aeps cash withdrawal", err)
@@ -446,6 +476,13 @@ func (ah *AEPSHandler) GetAEPSTDSDeductionsByMDID(w http.ResponseWriter, r *http
 }
 
 func (ah *AEPSHandler) GenerateAEPSTransactionOTP(w http.ResponseWriter, r *http.Request) {
+	if down, err := ah.apiDownStore.IsServiceDown(models.ServiceAEPS); err != nil {
+		utils.ServerError(w, ah.logger, "generate aeps transaction otp", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ah.logger, "generate aeps transaction otp", errors.New("aeps is currently unavailable"))
+		return
+	}
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, ah.logger, "generate aeps transaction otp", err)

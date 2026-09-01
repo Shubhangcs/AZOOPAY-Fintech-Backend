@@ -224,14 +224,41 @@ func (ds *PostgresDTHRechargeStore) RefundDTHRecharge(id int64) error {
 		}
 	}
 
-	// Credit full recharge amount back to retailer.
-	if err = creditTx(tx, transaction{
-		UserID: dr.RetailerID, ReferenceID: refID,
-		Amount: dr.Amount, Reason: "DTH_RECHARGE_REFUND", Remarks: remarks,
-		userTableInfo: *retailerInfo,
-	}, ds.walletStore); err != nil {
+
+	refundQuery := `
+		UPDATE retailers
+		SET refund_wallet = refund_wallet + $1,
+			updated_at = NOW()
+		WHERE retailer_id=$2
+		RETURNING refund_wallet;
+	`
+	var refundAfterBalance float64
+	if err = tx.QueryRow(refundQuery , dr.Amount , dr.RetailerID).Scan(
+		&refundAfterBalance,
+	);err != nil {
 		return err
 	}
+
+	if err := ds.walletStore.CreateWalletTransactionTx(tx , &models.WalletTransactionModel{
+		UserID: dr.RetailerID,
+		ReferenceID: refID,
+		CreditAmount: &dr.Amount,
+		BeforeBalance: refundAfterBalance - dr.Amount,
+		AfterBalance: refundAfterBalance,
+		TransactionReason: "DTH_RECHARGE_REFUND",
+		Remarks: remarks,
+	}); err != nil {
+		return err
+	}
+
+	// Credit full recharge amount back to retailer.
+	// if err = creditTx(tx, transaction{
+	// 	UserID: dr.RetailerID, ReferenceID: refID,
+	// 	Amount: dr.Amount, Reason: "DTH_RECHARGE_REFUND", Remarks: remarks,
+	// 	userTableInfo: *retailerInfo,
+	// }, ds.walletStore); err != nil {
+	// 	return err
+	// }
 
 	return tx.Commit()
 }
