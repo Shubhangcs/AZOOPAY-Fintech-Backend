@@ -223,6 +223,8 @@ func getRetailerDetails(
 		r.distributor_id,
 		r.retailer_address,
 		r.retailer_email,
+		r.retailer_name,
+		r.retailer_phone,
 		d.master_distributor_id,
 		md.admin_id
 	FROM retailers r
@@ -233,7 +235,7 @@ func getRetailerDetails(
 	var rc retailerChain
 	err := db.QueryRow(q, retailerID).Scan(
 		&rc.kyc, &rc.blocked, &rc.payoutBlocked, &rc.balance,
-		&rc.distributorID, &rc.address, &rc.email, &rc.mdID, &rc.adminID,
+		&rc.distributorID, &rc.address, &rc.email, &rc.name, &rc.phone, &rc.mdID, &rc.adminID,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

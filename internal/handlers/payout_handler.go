@@ -247,6 +247,171 @@ func callNewPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (r
 	return
 }
 
+func (ph *PayoutHandler) HandleCreateDevsidhPayoutTransaction(w http.ResponseWriter, r *http.Request) {
+	if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayoutPPL); err != nil {
+		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("payout service is currently unavailable"))
+		return
+	}
+
+	var req models.PayoutTransactionModel
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	if err := req.ValidateInitilizePayout(); err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	if len(req.RetailerID) == 0 || string(req.RetailerID[0]) != "R" {
+		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("invalid retailer id"))
+		return
+	}
+
+	res, err := generateToken()
+	if err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	req.APIProvider = "DVSID"
+	if err := ph.payoutStore.InitializePayoutTransaction(&req); err != nil {
+		if isPayoutClientErr(err) {
+			utils.BadRequest(w, ph.logger, "create payout transaction", err)
+			return
+		}
+		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	// Hit the external payout API and auto-finalize based on the response.
+	apiResp, finalStatus, orderID, operatorTxnID := callDevsidhPayoutAPI(ph.logger, &req, res.Token)
+
+	if err := ph.payoutStore.FinalizePayout(req.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
+		utils.ServerError(w, ph.logger, "finalize payout transaction", err)
+		return
+	}
+
+	req.PayoutTransactionStatus = finalStatus
+	req.OrderID = orderID
+	req.OperatorTransactionID = operatorTxnID
+
+	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{
+		"message":            "payout transaction processed",
+		"payout_transaction": req,
+		"api_response":       apiResp,
+	})
+}
+
+func generateToken() (*models.DevsidhTokenResponse, error) {
+	var res models.DevsidhTokenResponse
+	if err := utils.GetRequest3(
+		utils.DevsidhAPI+utils.DevsidhGenerateToken,
+		"UserId",
+		utils.DevsidhAPIUsername,
+		"Password",
+		utils.DevsidhAPIPassword,
+		"Token",
+		utils.DevsidhAPIToken,
+		&res,
+	); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel, apiToken string) (resp *models.APIResponseModel, finalStatus, orderID, operatorTxnID string) {
+	finalStatus = "FAILED"
+
+	if utils.DevsidhAPI == "" || utils.DevsidhAPIPassword == "" || utils.DevsidhAPIToken == "" || utils.DevsidhAPIUsername == "" || utils.DevsidhPayout == "" {
+		logger.Error("devsidh payout api not configured", "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	var apiResp models.DevsidhPayoutAPIResponseModel
+	err := utils.PostRequest4(
+		utils.PayntricAPI+utils.PayntricPayout,
+		"UserId",
+		utils.DevsidhAPIUsername,
+		"Password",
+		utils.DevsidhAPIPassword,
+		"Token",
+		utils.DevsidhAPIToken,
+		"Authorization",
+		"Bearer "+apiToken,
+		map[string]any{
+			"beneficiaryAccountNumber": pt.AccountNumber,
+			"bankName":                 pt.BankName,
+			"bankIFSCCode":             pt.IFSCCode,
+			"beneficiaryName":          pt.BeneficiaryName,
+			"amount":                   pt.Amount,
+			"txnType":                  pt.TransferType,
+			"remarks":                  "Payout to " + pt.BeneficiaryName,
+			"senderMobileNumber":       pt.RetailerPhone,
+			"beneficiaryMobileNumber":  pt.MobileNumber,
+			"senderName":               pt.RetailerName,
+			"email":                    pt.Email,
+			"latitude":                 pt.Latitude,
+			"longitude":                pt.Longitude,
+			"clientTxnId":              pt.PartnerRequestID,
+		},
+		&apiResp,
+	)
+	if err != nil {
+		logger.Error("payout api call failed", "error", err, "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	resp = &models.APIResponseModel{
+		Message:               apiResp.StatusDesc,
+		OrderID:               apiResp.Data.TransactionID,
+		OperatorTransactionID: apiResp.Data.BankReferenceNumber,
+		PartnerRequestID:      apiResp.Data.ClientTransactionID,
+	}
+	orderID = apiResp.Data.TransactionID
+	operatorTxnID = apiResp.Data.BankReferenceNumber
+
+	if apiResp.Data.TransactionStatus == "FAILED" || apiResp.Data.TransactionStatus == "REVERSED" {
+		logger.Error("payntric payout api error", "msg", apiResp.StatusDesc, "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	finalStatus = apiResp.Data.TransactionStatus
+	return
+}
+
+func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r *http.Request) {
+	if utils.DevsidhAPI == "" || utils.DevsidhAPIPassword == "" || utils.DevsidhAPIToken == "" || utils.DevsidhAPIUsername == "" || utils.DevsidhPayout == "" {
+		ah.logger.Error("cred error")
+		return
+	}
+
+	res, err := generateToken()
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "create payout transaction", err)
+		return
+	}
+
+	var resp models.PayntricWalletBalanceResponseModel
+	if err := utils.GetRequest4(
+		utils.DevsidhAPI+utils.DevsidhGetBalance,
+		"UserId", utils.DevsidhAPIUsername,
+		"Password", utils.DevsidhAPIPassword,
+		"Token", utils.DevsidhAPIToken,
+		"Authorization", "Bearer "+res.Token,
+		&resp,
+	); err != nil {
+		utils.ServerError(w, ah.logger, "get payntric balance", err)
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "payntric wallet balance fetched", "balance": resp})
+}
+
 func (ph *PayoutHandler) HandleCheckPayoutStatus(w http.ResponseWriter, r *http.Request) {
 	payoutID, err := utils.ReadParamID(r)
 	if err != nil {

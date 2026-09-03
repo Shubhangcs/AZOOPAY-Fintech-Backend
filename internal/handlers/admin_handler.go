@@ -360,3 +360,4 @@ func (ah *AdminHandler) HandleGetPayntricWalletBalance(w http.ResponseWriter, r 
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "payntric wallet balance fetched", "balance": resp})
 }
+

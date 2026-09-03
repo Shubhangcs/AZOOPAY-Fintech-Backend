@@ -18,6 +18,26 @@ var validTransferTypes = map[string]bool{
 	"NEFT": true,
 }
 
+type DevsidhPayoutAPIResponseModel struct {
+	Status     string `json:"status"`
+	StatusDesc string `json:"statusDesc"`
+	Data       struct {
+		Amount                       float64 `json:"amount"`
+		ProductName                  string  `json:"productName"`
+		TransactionStatusDescription string  `json:"transactionStatusDescription"`
+		TransactionStatus            string  `json:"txnStatus"`
+		BankReferenceNumber          string  `json:"bankRefNumber"`
+		ClientTransactionID          string  `json:"clientTxnId"`
+		TransactionID                string  `json:"transactionId"`
+		TransactionStatusID          int     `json:"txnStatusID"`
+	} `json:"data"`
+}
+
+type DevsidhTokenResponse struct {
+	Token     string    `json:"accessToken"`
+	ExpiresAT time.Time `json:"expiresAtUtc"`
+}
+
 type PayoutTransactionModel struct {
 	PayoutTransactionID        string    `json:"payout_transaction_id"`
 	PartnerRequestID           string    `json:"partner_request_id"`
@@ -47,6 +67,7 @@ type PayoutTransactionModel struct {
 	Email                      string    `json:"email"`
 	Address                    string    `json:"address"`
 	APIProvider                string    `json:"api_provider"`
+	RetailerPhone              string    `json:"retailer_phone"`
 	CreatedAT                  time.Time `json:"created_at"`
 	UpdatedAT                  time.Time `json:"updated_at"`
 }

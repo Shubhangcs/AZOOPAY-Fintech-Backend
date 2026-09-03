@@ -59,6 +59,7 @@ func adminRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/recharge-kit/recharge-balance", app.AdminHandler.HandleGetRechargeKitRechargeBalance)
 		r.Get("/recharge-kit/primary-balance", app.AdminHandler.HandleGetRechargeKitPrimaryBalance)
 		r.Get("/payntric/balance", app.AdminHandler.HandleGetPayntricWalletBalance)
+		r.Get("/devsidh/balance", app.AdminHandler.HandleGetPayntricWalletBalance)
 		r.Put("/update/{id}", app.AdminHandler.HandleUpdateAdminDetails)
 		r.Patch("/update/{id}/password", app.AdminHandler.HandleUpdateAdminPassword)
 		r.Patch("/update/{id}/wallet", app.AdminHandler.HandleUpdateAdminWalletBalance)
@@ -302,6 +303,7 @@ func payoutRoutes(router *chi.Mux, app *app.Application) {
 
 		r.Post("/create", app.PayoutHandler.HandleCreatePayoutTransaction)
 		r.Post("/create/new", app.PayoutHandler.HandleCreatePayntricPayoutTransaction)
+		r.Post("/create/dev", app.PayoutHandler.HandleCreateDevsidhPayoutTransaction)
 		r.Post("/status-check/{id}", app.PayoutHandler.HandleCheckPayoutStatus)
 		r.Post("/status-check/new/{id}", app.PayoutHandler.HandlePayntricCheckPayoutStatus)
 		r.Post("/refund/{id}", app.PayoutHandler.HandleRefundPayout)
@@ -469,6 +471,17 @@ func ccBillRoutes(router *chi.Mux, app *app.Application) {
 
 func upiAtmRoutes(router *chi.Mux, app *app.Application) {
 	router.Route("/upi-atm", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
+		r.Post("/create-qr/{id}", app.UPIATMHandler.HandleCreateUPIQR)
+		r.Post("/qr-status", app.UPIATMHandler.HandleCheckQRTransactionStatus)
+		r.Get("/get", app.UPIATMHandler.HandleGetAllUPIATMTransactions)
+		r.Get("/get/{id}", app.UPIATMHandler.HandleGetUPIATMTransactionsByRetailerID)
+	})
+}
+
+func devsidhPayoutRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/dv-payout", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 
 		r.Post("/create-qr/{id}", app.UPIATMHandler.HandleCreateUPIQR)

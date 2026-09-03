@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/levionstudio/fintech/internal/models"
@@ -47,6 +48,8 @@ type retailerChain struct {
 	balance       float64
 	address       string
 	email         string
+	name          string
+	phone         string
 }
 
 func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models.PayoutTransactionModel) error {
@@ -60,6 +63,8 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 	}
 	pt.Address = rc.address
 	pt.Email = rc.email
+	pt.RetailerName = rc.name
+	pt.RetailerPhone = rc.phone
 
 	if !rc.kyc {
 		return errors.New("retailer KYC is not verified")
@@ -225,7 +230,7 @@ func (ps *PostgresPayoutTransactionStore) FinalizePayout(payoutTransactionID, or
 	if err != nil {
 		return err
 	}
-	
+
 	return checkRowsAffected(res)
 }
 
@@ -319,20 +324,20 @@ func (ps *PostgresPayoutTransactionStore) RefundPayout(payoutTransactionID strin
 		RETURNING refund_wallet;
 	`
 	var refundAfterBalance float64
-	if err = tx.QueryRow(refundQuery , totalRefund , pt.RetailerID).Scan(
+	if err = tx.QueryRow(refundQuery, totalRefund, pt.RetailerID).Scan(
 		&refundAfterBalance,
-	);err != nil {
+	); err != nil {
 		return err
 	}
 
-	if err := ps.walletStore.CreateWalletTransactionTx(tx , &models.WalletTransactionModel{
-		UserID: pt.RetailerID,
-		ReferenceID: refID,
-		CreditAmount: &totalRefund,
-		BeforeBalance: refundAfterBalance - totalRefund,
-		AfterBalance: refundAfterBalance,
+	if err := ps.walletStore.CreateWalletTransactionTx(tx, &models.WalletTransactionModel{
+		UserID:            pt.RetailerID,
+		ReferenceID:       refID,
+		CreditAmount:      &totalRefund,
+		BeforeBalance:     refundAfterBalance - totalRefund,
+		AfterBalance:      refundAfterBalance,
 		TransactionReason: "PAYOUT_REFUND",
-		Remarks: retailerRemarks,
+		Remarks:           retailerRemarks,
 	}); err != nil {
 		return err
 	}
@@ -475,4 +480,54 @@ func scanPayoutTransactions(db *sql.DB, query string, args ...any) ([]models.Pay
 		results = append(results, pt)
 	}
 	return results, rows.Err()
+}
+
+func (ps *PostgresPayoutTransactionStore) SaveToken(token string, expiry time.Time) error {
+	query := `
+		INSERT INTO devsidh_token_store(
+			token,
+			expiry
+		) VALUES (
+		 	$1 , $2
+		);
+	`
+	res, err := ps.db.Exec(query, token, expiry)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
+}
+
+func (ps *PostgresPayoutTransactionStore) GetToken() (int64, string, time.Time, error) {
+	query := `
+		SELECT
+			token_id,
+			token,
+			expiry
+		FROM devsidh_token_store;
+	`
+	var (
+		token  string
+		expiry time.Time
+		id     int64
+	)
+	err := ps.db.QueryRow(query).Scan(&id, &token, &expiry)
+	if err != nil {
+		return 0, "", time.Now(), err
+	}
+
+	return id, token, expiry, nil
+}
+
+func (ps *PostgresPayoutTransactionStore) DeleteToken(id int64) error {
+	query := `
+		DELETE FROM devsidh_token_store WHERE token_id=$1;
+	`
+	res, err := ps.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	return checkRowsAffected(res)
 }
