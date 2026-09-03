@@ -59,7 +59,7 @@ func adminRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/recharge-kit/recharge-balance", app.AdminHandler.HandleGetRechargeKitRechargeBalance)
 		r.Get("/recharge-kit/primary-balance", app.AdminHandler.HandleGetRechargeKitPrimaryBalance)
 		r.Get("/payntric/balance", app.AdminHandler.HandleGetPayntricWalletBalance)
-		r.Get("/devsidh/balance", app.AdminHandler.HandleGetPayntricWalletBalance)
+		r.Get("/devsidh/balance", app.PayoutHandler.HandleGetDevsidhWalletBalance)
 		r.Put("/update/{id}", app.AdminHandler.HandleUpdateAdminDetails)
 		r.Patch("/update/{id}/password", app.AdminHandler.HandleUpdateAdminPassword)
 		r.Patch("/update/{id}/wallet", app.AdminHandler.HandleUpdateAdminWalletBalance)

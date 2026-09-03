@@ -397,7 +397,11 @@ func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r 
 		return
 	}
 
-	var resp models.PayntricWalletBalanceResponseModel
+	var resp struct {
+		Success          bool    `json:"success"`
+		AvailableBalance float64 `json:"availableBalance"`
+		Message          string  `json:"message"`
+	}
 	if err := utils.GetRequest4(
 		utils.DevsidhAPI+utils.DevsidhGetBalance,
 		"UserId", utils.DevsidhAPIUsername,
@@ -409,7 +413,7 @@ func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r 
 		utils.ServerError(w, ah.logger, "get payntric balance", err)
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "payntric wallet balance fetched", "balance": resp})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": resp.Message, "balance": resp})
 }
 
 func (ph *PayoutHandler) HandleCheckPayoutStatus(w http.ResponseWriter, r *http.Request) {
