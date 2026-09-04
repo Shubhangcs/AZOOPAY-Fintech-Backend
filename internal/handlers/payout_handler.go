@@ -368,6 +368,8 @@ func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 		return
 	}
 
+	fmt.Println(apiResp)
+
 	resp = &models.APIResponseModel{
 		Message:               apiResp.StatusDesc,
 		OrderID:               apiResp.Data.TransactionID,
