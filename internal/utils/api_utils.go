@@ -56,6 +56,7 @@ const (
 	DevsidhPayout                  = "/Payout/payouttransaction"
 	DevsidhGenerateToken           = "/Service/GenerateToken"
 	DevsidhGetBalance              = "/Service/GetBalance"
+	DevsidhPayoutStatusCheck       = "/Service/TransactionEnquiry"
 )
 
 var apiHTTPClient = &http.Client{Timeout: 70 * time.Second}

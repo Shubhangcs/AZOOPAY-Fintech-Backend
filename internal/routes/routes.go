@@ -479,14 +479,3 @@ func upiAtmRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/get/{id}", app.UPIATMHandler.HandleGetUPIATMTransactionsByRetailerID)
 	})
 }
-
-func devsidhPayoutRoutes(router *chi.Mux, app *app.Application) {
-	router.Route("/dv-payout", func(r chi.Router) {
-		r.Use(middlewares.AuthorizationMiddleware)
-
-		r.Post("/create-qr/{id}", app.UPIATMHandler.HandleCreateUPIQR)
-		r.Post("/qr-status", app.UPIATMHandler.HandleCheckQRTransactionStatus)
-		r.Get("/get", app.UPIATMHandler.HandleGetAllUPIATMTransactions)
-		r.Get("/get/{id}", app.UPIATMHandler.HandleGetUPIATMTransactionsByRetailerID)
-	})
-}
