@@ -34,8 +34,8 @@ type DevsidhPayoutAPIResponseModel struct {
 }
 
 type DevsidhTokenResponse struct {
-	Token     string    `json:"accessToken"`
-	ExpiresAT time.Time `json:"expiresAtUtc"`
+	Token     string `json:"accessToken"`
+	ExpiresAT string `json:"expiresAtUtc"`
 }
 
 type PayoutTransactionModel struct {
