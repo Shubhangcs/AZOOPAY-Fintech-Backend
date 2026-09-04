@@ -309,7 +309,7 @@ func (ph *PayoutHandler) HandleCreateDevsidhPayoutTransaction(w http.ResponseWri
 
 func generateToken() (*models.DevsidhTokenResponse, error) {
 	var res models.DevsidhTokenResponse
-	if err := utils.PostRequest4(
+	if err := utils.PostRequest3(
 		utils.DevsidhAPI+utils.DevsidhGenerateToken,
 		"UserId",
 		utils.DevsidhAPIUsername,
@@ -317,8 +317,6 @@ func generateToken() (*models.DevsidhTokenResponse, error) {
 		utils.DevsidhAPIPassword,
 		"Token",
 		utils.DevsidhAPIToken,
-		"",
-		"",
 		map[string]any{},
 		&res,
 	); err != nil {

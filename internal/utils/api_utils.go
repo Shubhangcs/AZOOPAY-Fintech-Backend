@@ -142,6 +142,34 @@ func PostRequest4(url, authKey1, authValue1, authKey2, authValue2, authKey3, aut
 	return nil
 }
 
+func PostRequest3(url, authKey1, authValue1, authKey2, authValue2, authKey3, authValue3 string, body map[string]any, res any) error {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("PostRequest marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("PostRequest build: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set(authKey1, authValue1)
+	req.Header.Set(authKey2, authValue2)
+	req.Header.Set(authKey3, authValue3)
+
+	resp, err := apiHTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("PostRequest do: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if err := json.NewDecoder(resp.Body).Decode(res); err != nil {
+		return fmt.Errorf("PostRequest decode (status %d): %w", resp.StatusCode, err)
+	}
+	return nil
+}
+
 func GetRequest(url, authKey, authValue string, res any) error {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
