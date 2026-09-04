@@ -368,6 +368,23 @@ func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 		return
 	}
 
+	fmt.Println(map[string]any{
+		"beneficiaryAccountNumber": pt.AccountNumber,
+		"bankName":                 pt.BankName,
+		"bankIFSCCode":             pt.IFSCCode,
+		"beneficiaryName":          pt.BeneficiaryName,
+		"amount":                   pt.Amount,
+		"txnType":                  pt.TransferType,
+		"remarks":                  "Payout to " + pt.BeneficiaryName,
+		"senderMobileNumber":       pt.RetailerPhone,
+		"beneficiaryMobileNumber":  pt.MobileNumber,
+		"senderName":               pt.RetailerName,
+		"email":                    pt.Email,
+		"latitude":                 pt.Latitude,
+		"longitude":                pt.Longitude,
+		"clientTxnId":              pt.PartnerRequestID,
+	})
+
 	fmt.Println(apiResp)
 
 	resp = &models.APIResponseModel{
