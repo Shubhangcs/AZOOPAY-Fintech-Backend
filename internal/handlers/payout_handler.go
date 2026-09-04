@@ -382,6 +382,8 @@ func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 		return
 	}
 
+	fmt.Println(apiResp.Data.TransactionStatus)
+
 	finalStatus = apiResp.Data.TransactionStatus
 	return
 }
