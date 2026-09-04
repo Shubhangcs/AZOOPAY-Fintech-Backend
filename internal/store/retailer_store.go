@@ -667,7 +667,7 @@ func (rs *PostgresRetailerStore) ClaimRefund(id string, mpin int64) error {
 			refund_wallet = 0,
 			updated_at = NOW()
 		WHERE retailer_id = $1
-		  AND mpin = $2
+		  AND retailer_mpin = $2
 		  AND refund_wallet > 0;
 	`
 
