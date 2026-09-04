@@ -27,6 +27,10 @@ func NewPostgresPayoutTransactionStore(db *sql.DB, commisionStore CommisionStore
 	}
 }
 
+func GenerateID() string {
+	return fmt.Sprintf("%012d", time.Now().UnixMilli()%1_000_000_000_000)
+}
+
 type PayoutTransactionStore interface {
 	InitializePayoutTransaction(pt *models.PayoutTransactionModel) error
 	FinalizePayout(payoutTransactionID, orderID, operatorTransactionID, status string) error
@@ -115,7 +119,7 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		return errors.New("transaction limit exceded")
 	}
 
-	pt.PartnerRequestID = uuid.New().String()
+	pt.PartnerRequestID = GenerateID()
 	pt.AdminCommision = commision.AdminCommision
 	pt.MasterDistributorCommision = commision.MasterDistributorCommision
 	pt.DistributorCommision = commision.DistributorCommision
