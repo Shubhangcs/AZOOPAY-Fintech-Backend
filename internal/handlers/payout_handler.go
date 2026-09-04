@@ -514,6 +514,8 @@ func callDevsidhPayoutStatusAPI(logger *slog.Logger, partnerRequestID, ordrID, t
 		return
 	}
 
+	fmt.Println(apiResp)
+
 	resp = &apiResp
 	orderID = apiResp.Data.TransactionID
 	operatorTxnID = apiResp.Data.BankReferenceNumber
