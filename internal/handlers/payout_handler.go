@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/levionstudio/fintech/internal/models"
 	"github.com/levionstudio/fintech/internal/store"
@@ -401,7 +402,7 @@ func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 		return
 	}
 
-	finalStatus = apiResp.Data.TransactionStatus
+	finalStatus = strings.ToUpper(apiResp.Data.TransactionStatus)
 	return
 }
 
@@ -522,7 +523,7 @@ func callDevsidhPayoutStatusAPI(logger *slog.Logger, partnerRequestID, ordrID, t
 		return // stays PENDING
 	}
 
-	finalStatus = apiResp.Data.TransactionStatus
+	finalStatus = strings.ToUpper(apiResp.Data.TransactionStatus)
 	return
 }
 
