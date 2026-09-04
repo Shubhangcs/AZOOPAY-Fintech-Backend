@@ -309,7 +309,7 @@ func (ph *PayoutHandler) HandleCreateDevsidhPayoutTransaction(w http.ResponseWri
 
 func generateToken() (*models.DevsidhTokenResponse, error) {
 	var res models.DevsidhTokenResponse
-	if err := utils.GetRequest3(
+	if err := utils.PostRequest4(
 		utils.DevsidhAPI+utils.DevsidhGenerateToken,
 		"UserId",
 		utils.DevsidhAPIUsername,
@@ -317,6 +317,9 @@ func generateToken() (*models.DevsidhTokenResponse, error) {
 		utils.DevsidhAPIPassword,
 		"Token",
 		utils.DevsidhAPIToken,
+		"",
+		"",
+		map[string]any{},
 		&res,
 	); err != nil {
 		return nil, err
@@ -404,13 +407,12 @@ func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r 
 		AvailableBalance float64 `json:"availableBalance"`
 		Message          string  `json:"message"`
 	}
-	if err := utils.PostRequest4(
+	if err := utils.GetRequest4(
 		utils.DevsidhAPI+utils.DevsidhGetBalance,
 		"UserId", utils.DevsidhAPIUsername,
 		"Password", utils.DevsidhAPIPassword,
 		"Token", utils.DevsidhAPIToken,
 		"Authorization", "Bearer "+res.Token,
-		map[string]any{},
 		&resp,
 	); err != nil {
 		utils.ServerError(w, ah.logger, "get payntric balance", err)
