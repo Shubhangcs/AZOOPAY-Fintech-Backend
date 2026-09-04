@@ -404,12 +404,13 @@ func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r 
 		AvailableBalance float64 `json:"availableBalance"`
 		Message          string  `json:"message"`
 	}
-	if err := utils.GetRequest4(
+	if err := utils.PostRequest4(
 		utils.DevsidhAPI+utils.DevsidhGetBalance,
 		"UserId", utils.DevsidhAPIUsername,
 		"Password", utils.DevsidhAPIPassword,
 		"Token", utils.DevsidhAPIToken,
 		"Authorization", "Bearer "+res.Token,
+		map[string]any{},
 		&resp,
 	); err != nil {
 		utils.ServerError(w, ah.logger, "get payntric balance", err)
