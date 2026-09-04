@@ -243,6 +243,7 @@ func GetRequest4(url, authKey1, authValue1, authKey2, authValue2, authKey3, auth
 	req.Header.Set(authKey1, authValue1)
 	req.Header.Set(authKey2, authValue2)
 	req.Header.Set(authKey3, authValue3)
+	req.Header.Set(authKey4, authValue4)
 
 	resp, err := apiHTTPClient.Do(req)
 	if err != nil {

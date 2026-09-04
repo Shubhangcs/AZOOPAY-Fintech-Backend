@@ -471,8 +471,8 @@ func (ph *PayoutHandler) HandleCheckDevsidhPayoutStatus(w http.ResponseWriter, r
 func callDevsidhPayoutStatusAPI(logger *slog.Logger, partnerRequestID, ordrID, token string) (resp *models.DevsidhPayoutAPIResponseModel, finalStatus, orderID, operatorTxnID string) {
 	finalStatus = "PENDING"
 
-	if utils.RechargeKitAPI2 == "" || utils.RechargeKitAPIToken == "" {
-		logger.Error("payout status api not configured", "payout_transaction_id", ordrID)
+	if utils.DevsidhAPI == "" || utils.DevsidhAPIPassword == "" || utils.DevsidhAPIToken == "" || utils.DevsidhAPIUsername == "" || utils.DevsidhPayout == "" {
+		logger.Error("devsidh payout api not configured", "payout_transaction_id", orderID)
 		return
 	}
 
@@ -485,7 +485,7 @@ func callDevsidhPayoutStatusAPI(logger *slog.Logger, partnerRequestID, ordrID, t
 		"Authorization", "Bearer "+token,
 		map[string]any{
 			"clientTxnId":   partnerRequestID,
-			"transactionId": orderID,
+			"transactionId": ordrID,
 		},
 		&apiResp,
 	)

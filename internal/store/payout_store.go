@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
+	// "time"
 
 	"github.com/google/uuid"
 	"github.com/levionstudio/fintech/internal/models"
@@ -482,52 +482,52 @@ func scanPayoutTransactions(db *sql.DB, query string, args ...any) ([]models.Pay
 	return results, rows.Err()
 }
 
-func (ps *PostgresPayoutTransactionStore) SaveToken(token string, expiry time.Time) error {
-	query := `
-		INSERT INTO devsidh_token_store(
-			token,
-			expiry
-		) VALUES (
-		 	$1 , $2
-		);
-	`
-	res, err := ps.db.Exec(query, token, expiry)
-	if err != nil {
-		return err
-	}
+// func (ps *PostgresPayoutTransactionStore) SaveToken(token string, expiry time.Time) error {
+// 	query := `
+// 		INSERT INTO devsidh_token_store(
+// 			token,
+// 			expiry
+// 		) VALUES (
+// 		 	$1 , $2
+// 		);
+// 	`
+// 	res, err := ps.db.Exec(query, token, expiry)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return checkRowsAffected(res)
-}
+// 	return checkRowsAffected(res)
+// }
 
-func (ps *PostgresPayoutTransactionStore) GetToken() (int64, string, time.Time, error) {
-	query := `
-		SELECT
-			token_id,
-			token,
-			expiry
-		FROM devsidh_token_store;
-	`
-	var (
-		token  string
-		expiry time.Time
-		id     int64
-	)
-	err := ps.db.QueryRow(query).Scan(&id, &token, &expiry)
-	if err != nil {
-		return 0, "", time.Now(), err
-	}
+// func (ps *PostgresPayoutTransactionStore) GetToken() (int64, string, time.Time, error) {
+// 	query := `
+// 		SELECT
+// 			token_id,
+// 			token,
+// 			expiry
+// 		FROM devsidh_token_store;
+// 	`
+// 	var (
+// 		token  string
+// 		expiry time.Time
+// 		id     int64
+// 	)
+// 	err := ps.db.QueryRow(query).Scan(&id, &token, &expiry)
+// 	if err != nil {
+// 		return 0, "", time.Now(), err
+// 	}
 
-	return id, token, expiry, nil
-}
+// 	return id, token, expiry, nil
+// }
 
-func (ps *PostgresPayoutTransactionStore) DeleteToken(id int64) error {
-	query := `
-		DELETE FROM devsidh_token_store WHERE token_id=$1;
-	`
-	res, err := ps.db.Exec(query, id)
-	if err != nil {
-		return err
-	}
+// func (ps *PostgresPayoutTransactionStore) DeleteToken(id int64) error {
+// 	query := `
+// 		DELETE FROM devsidh_token_store WHERE token_id=$1;
+// 	`
+// 	res, err := ps.db.Exec(query, id)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return checkRowsAffected(res)
-}
+// 	return checkRowsAffected(res)
+// }
