@@ -6,7 +6,7 @@ import (
 	"fmt"
 	// "time"
 
-	"github.com/google/uuid"
+	// "github.com/google/uuid"
 	"github.com/levionstudio/fintech/internal/models"
 	"github.com/levionstudio/fintech/internal/utils"
 )
