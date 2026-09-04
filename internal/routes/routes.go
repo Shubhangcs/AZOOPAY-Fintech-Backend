@@ -306,6 +306,7 @@ func payoutRoutes(router *chi.Mux, app *app.Application) {
 		r.Post("/create/dev", app.PayoutHandler.HandleCreateDevsidhPayoutTransaction)
 		r.Post("/status-check/{id}", app.PayoutHandler.HandleCheckPayoutStatus)
 		r.Post("/status-check/new/{id}", app.PayoutHandler.HandlePayntricCheckPayoutStatus)
+		r.Post("/status-check/dev/{id}", app.PayoutHandler.HandleCheckDevsidhPayoutStatus)
 		r.Post("/refund/{id}", app.PayoutHandler.HandleRefundPayout)
 		r.Put("/update/{id}", app.PayoutHandler.HandleUpdatePayoutTransaction)
 		r.Get("/all", app.PayoutHandler.HandleGetAllPayoutTransactions)
