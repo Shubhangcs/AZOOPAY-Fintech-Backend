@@ -248,13 +248,13 @@ func callNewPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel) (r
 }
 
 func (ph *PayoutHandler) HandleCreateDevsidhPayoutTransaction(w http.ResponseWriter, r *http.Request) {
-	if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayoutPPL); err != nil {
-		utils.ServerError(w, ph.logger, "create payout transaction", err)
-		return
-	} else if down {
-		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("payout service is currently unavailable"))
-		return
-	}
+	// if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayoutPPL); err != nil {
+	// 	utils.ServerError(w, ph.logger, "create payout transaction", err)
+	// 	return
+	// } else if down {
+	// 	utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("payout service is currently unavailable"))
+	// 	return
+	// }
 
 	var req models.PayoutTransactionModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
