@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	// "time"
+	"time"
 
 	// "github.com/google/uuid"
 	"github.com/levionstudio/fintech/internal/models"
