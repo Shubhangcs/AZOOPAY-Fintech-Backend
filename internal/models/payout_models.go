@@ -19,7 +19,7 @@ var validTransferTypes = map[string]bool{
 }
 
 type DevsidhPayoutAPIResponseModel struct {
-	Status     int    `json:"status"`
+	Status     string `json:"status"`
 	StatusDesc string `json:"statusDesc"`
 	Data       struct {
 		Amount                       float64 `json:"amount"`
