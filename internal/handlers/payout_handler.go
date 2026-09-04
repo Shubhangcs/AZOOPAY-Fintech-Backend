@@ -397,6 +397,8 @@ func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r 
 		return
 	}
 
+	fmt.Println(res)
+
 	var resp struct {
 		Success          bool    `json:"success"`
 		AvailableBalance float64 `json:"availableBalance"`
