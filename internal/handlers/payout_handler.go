@@ -498,7 +498,7 @@ func callDevsidhPayoutStatusAPI(logger *slog.Logger, partnerRequestID, ordrID, t
 	orderID = apiResp.Data.TransactionID
 	operatorTxnID = apiResp.Data.BankReferenceNumber
 
-	if apiResp.Status != "1" {
+	if apiResp.Status != 1 {
 		logger.Error("payout status api error", "msg", apiResp.Data.TransactionStatusDescription, "payout_transaction_id", ordrID)
 		return // stays PENDING
 	}
