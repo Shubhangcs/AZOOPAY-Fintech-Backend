@@ -258,33 +258,33 @@ func (ph *PayoutHandler) HandleCreateDevsidhPayoutTransaction(w http.ResponseWri
 
 	var req models.PayoutTransactionModel
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		utils.BadRequest(w, ph.logger, "1 create payout transaction", err)
 		return
 	}
 
 	if err := req.ValidateInitilizePayout(); err != nil {
-		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		utils.BadRequest(w, ph.logger, "2 create payout transaction", err)
 		return
 	}
 
 	if len(req.RetailerID) == 0 || string(req.RetailerID[0]) != "R" {
-		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("invalid retailer id"))
+		utils.BadRequest(w, ph.logger, "3 create payout transaction", errors.New("invalid retailer id"))
 		return
 	}
 
 	res, err := generateToken()
 	if err != nil {
-		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		utils.BadRequest(w, ph.logger, "4 create payout transaction", err)
 		return
 	}
 
 	req.APIProvider = "DVSID"
 	if err := ph.payoutStore.InitializePayoutTransaction(&req); err != nil {
 		if isPayoutClientErr(err) {
-			utils.BadRequest(w, ph.logger, "create payout transaction", err)
+			utils.BadRequest(w, ph.logger, "5 create payout transaction", err)
 			return
 		}
-		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		utils.ServerError(w, ph.logger, "6 create payout transaction", err)
 		return
 	}
 
