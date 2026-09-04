@@ -661,39 +661,22 @@ func (rs *PostgresRetailerStore) UpdateRetailerHoldAmount(id string, amount floa
 }
 
 func (rs *PostgresRetailerStore) ClaimRefund(id string, mpin int64) error {
-	tx, err := rs.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	getRefundAmountQuery := `
-		SELECT refund_wallet
-		FROM retailers 
-		WHERE retailer_id=$1 AND mpin=$2;
-	`
-	var refundAmount float64
-	if err := tx.QueryRow(getRefundAmountQuery, id, mpin).Scan(&refundAmount); err != nil {
-		return err
-	}
-
-	updateRetailerWallet := `
+	query := `
 		UPDATE retailers
-		SET retailer_wallet_balance = retailer_wallet_balance + $1,
-			refund_wallet = refund_wallet - $1,
+		SET retailer_wallet_balance = retailer_wallet_balance + refund_wallet,
+			refund_wallet = 0,
 			updated_at = NOW()
-		WHERE retailer_id = $2;
+		WHERE retailer_id = $1
+		  AND mpin = $2
+		  AND refund_wallet > 0;
 	`
-	res, err := tx.Exec(updateRetailerWallet, refundAmount, id)
+
+	res, err := rs.db.Exec(query, id, mpin)
 	if err != nil {
 		return err
 	}
 
-	if err := checkRowsAffected(res); err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return checkRowsAffected(res)
 }
 
 func (rs *PostgresRetailerStore) GetRefundWalletBalance(id string) (float64, error) {
