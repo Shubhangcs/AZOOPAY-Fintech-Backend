@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/levionstudio/fintech/internal/models"
@@ -32,6 +33,11 @@ func mapAPIStatus(status int) string {
 	default:
 		return "FAILED"
 	}
+}
+
+func removeSpecialChars(s string) string {
+	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	return re.ReplaceAllString(s, "")
 }
 
 func (ph *PayoutHandler) HandleCreatePayoutTransaction(w http.ResponseWriter, r *http.Request) {
@@ -350,7 +356,7 @@ func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 			"beneficiaryAccountNumber": pt.AccountNumber,
 			"bankName":                 pt.BankName,
 			"bankIFSCCode":             pt.IFSCCode,
-			"beneficiaryName":          pt.BeneficiaryName,
+			"beneficiaryName":          removeSpecialChars(pt.BeneficiaryName),
 			"amount":                   pt.Amount,
 			"txnType":                  pt.TransferType,
 			"remarks":                  "Payout to " + pt.BeneficiaryName,
