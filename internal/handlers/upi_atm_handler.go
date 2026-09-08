@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -86,6 +87,17 @@ func createUpiQr(req *models.UPIATMCreateQRAPIRequestModel) (*models.UPIATMCreat
 	); err != nil {
 		return nil, err
 	}
+
+	fmt.Println(map[string]any{
+		"requestId": req.RequestID,
+		"amount":    req.RequestData.Amount,
+		"mobile":    req.RequestData.Mobile,
+		"latitude":  req.Latitude,
+		"longitude": req.Longitude,
+		"outletId":  req.OutletID,
+	})
+
+	fmt.Println(res)
 
 	if res.Status == "FAILED" {
 		return nil, errors.New(res.Message)
