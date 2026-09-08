@@ -110,6 +110,13 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		commision.DistributorCommision = 0.0
 	}
 
+	if pt.Amount >= 100 && pt.Amount < 1000 && pt.APIProvider == "DVSID" {
+		commision.AdminCommision = 10.0
+		commision.RetailerCommision = 0.0
+		commision.MasterDistributorCommision = 0.0
+		commision.DistributorCommision = 0.0
+	}
+
 	retailerTransactionLimit, err := ps.getRetailerTransactionLimit(pt.RetailerID, "PAYOUT")
 	if err != nil {
 		return err
