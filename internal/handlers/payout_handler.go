@@ -131,6 +131,20 @@ func callBoompayPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 		return
 	}
 
+	fmt.Println(map[string]any{
+		"custAccountNumber": pt.AccountNumber,
+		"custIFSC":          pt.IFSCCode,
+		"custName":          removeSpecialChars(pt.BeneficiaryName),
+		"transferAmount":    pt.Amount,
+		"transferType":      pt.TransferType,
+		"custMobileNumber":  pt.MobileNumber,
+		"latitude":          pt.Latitude,
+		"longitude":         pt.Longitude,
+		"requestID":         pt.PartnerRequestID,
+	})
+
+	fmt.Println(apiResp)
+
 	resp = &models.APIResponseModel{
 		Message:               apiResp.RequestStatus,
 		OrderID:               "NONE",
