@@ -254,6 +254,7 @@ func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token str
 		&apiResp,
 	)
 	if err != nil {
+		fmt.Println(err)
 		logger.Error("payout status api call failed", "error", err, "payout_transaction_id", partnerRequestID)
 		return
 	}
