@@ -151,7 +151,7 @@ func callBoompayPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 
 func generateBoompayAccessToken() (*models.BoompayAccessTokenAPIResponseModel, error) {
 	var res models.BoompayAccessTokenAPIResponseModel
-	if err := utils.GetRequest3(
+	if err := utils.PostRequest3(
 		utils.BoompayAPI+utils.BoompayPayoutAccessTokenGeneration,
 		"X-CLIENT-ID",
 		utils.BoompayClientID,
@@ -159,6 +159,7 @@ func generateBoompayAccessToken() (*models.BoompayAccessTokenAPIResponseModel, e
 		utils.BoompayAPIToken,
 		"X-API-SECRET",
 		utils.BoompayAPISecret,
+		map[string]any{},
 		&res,
 	); err != nil {
 		return nil, err
