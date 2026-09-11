@@ -115,25 +115,30 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		return
 	}
 
+	tokenData, err := generateBoompayAccessToken()
+	if err != nil {
+		utils.BadRequest(w, bh.logger, "verify beneficiary: token generation", err)
+		return
+	}
+
 	var apiResp models.VerifyBeneficiaryResponse
-	err := utils.PostRequest(utils.RechargeKitVerifyAPI+utils.PennyDrop, "Authorization", "Bearer "+utils.RechargeKitAPIToken, map[string]any{
-		"partner_request_id": partnerRequestID,
-		"bank_account":       req.AccountNumber,
-		"payment_mode":       1,
-		"beneficiary_name":   "",
-		"ifsc_code":          req.IFSCCode,
+	err = utils.PostRequest(utils.BoompayAPI+utils.BoompayPennyDrop, "Authorization", "Bearer "+tokenData.AccessToken, map[string]any{
+		"Requestid":         partnerRequestID,
+		"custIFSC":          req.IFSCCode,
+		"custAccountNumber": req.AccountNumber,
+		"verificationType":  "IMPS_PENNY_DROP",
 	}, &apiResp)
 	if err != nil {
 		utils.ServerError(w, bh.logger, "verify beneficiary: paysprint call", err)
 		return
 	}
 
-	if apiResp.Status == 3 || apiResp.Status == 2 {
-		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New(apiResp.Message))
+	if apiResp.StatusCode != 200 {
+		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New("penny drop api error"))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": apiResp.Data})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": apiResp})
 }
 
 // Get Beneficiaries Handler

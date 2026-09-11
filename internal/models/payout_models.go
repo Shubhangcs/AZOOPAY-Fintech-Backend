@@ -18,6 +18,46 @@ var validTransferTypes = map[string]bool{
 	"NEFT": true,
 }
 
+type BoompayAccessTokenAPIResponseModel struct {
+	Success     bool   `json:"success"`
+	Message     string `json:"message"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
+	AccessToken string `json:"access_token"`
+}
+
+type BoompayPayoutAPIResponseModel struct {
+	StatusCode       int     `json:"statusCode"`
+	RequestStatus    string  `json:"reqStatus"`
+	CustIFSC         string  `json:"custIFSC"`
+	CustAccNumber    string  `json:"custAccountNumber"`
+	CustName         string  `json:"custName"`
+	CustMobileNumber string  `json:"custMobileNumber"`
+	TransferAmount   float64 `json:"transferAmount"`
+	TransferType     string  `json:"transferType"`
+	UTR              string  `json:"utr"`
+}
+
+type BoompayStatusAPIResponseModel struct {
+	Success   bool                 `json:"success"`
+	Message   string               `json:"message"`
+	RequestID string               `json:"requestID"`
+	Status    string               `json:"status"`
+	Data      BoompayStatusAPIData `json:"data"`
+}
+
+type BoompayStatusAPIData struct {
+	StatusCode        int     `json:"statusCode"`
+	ReqStatus         string  `json:"reqStatus"`
+	CustIFSC          string  `json:"custIFSC"`
+	CustAccountNumber string  `json:"custAccountNumber"`
+	CustName          string  `json:"custName"`
+	CustMobileNumber  string  `json:"custMobileNumber"`
+	TransferAmount    float64 `json:"transferAmount"`
+	TransferType      string  `json:"transferType"`
+	UTR               string  `json:"utr"`
+}
+
 type DevsidhPayoutAPIResponseModel struct {
 	Status     string `json:"status"`
 	StatusDesc string `json:"statusDesc"`

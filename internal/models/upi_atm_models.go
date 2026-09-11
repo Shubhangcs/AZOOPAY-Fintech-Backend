@@ -2,6 +2,23 @@ package models
 
 import "time"
 
+type UPIATMSubMerchantOnboardingRequestModel struct {
+	Mobile  string `json:"mobile"`
+	Name    string `json:"name"`
+	Gender  string `json:"gender"`
+	Pan     string `json:"pan"`
+	Email   string `json:"email"`
+	Address struct {
+		Full    string `json:"full"`
+		City    string `json:"city"`
+		Pincode string `json:"pincode"`
+	} `json:"address"`
+	Aadhaar     string `json:"aadhaar"`
+	DateOfBirth string `json:"dateOfBirth"`
+	Latitude    string `json:"latitude"`
+	Longitude   string `json:"longitude"`
+}
+
 type UPIATMCreateQRRequestModel struct {
 	Amount float64 `json:"amount"`
 	Mobile string  `json:"mobile"`

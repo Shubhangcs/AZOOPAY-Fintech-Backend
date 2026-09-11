@@ -27,6 +27,16 @@ func NewUPIATMHandler(logger *slog.Logger, upiAtmStore store.UPIATMStore, aepsSt
 	}
 }
 
+// func (ua *UPIATMHandler) HandleSubMerchantSignup(w http.ResponseWriter, r *http.Request) {
+// 	retailerId, err := utils.ReadParamID(r)
+// 	if err != nil {
+// 		utils.BadRequest(w, ua.logger, "upi atm sub merchant signup", err)
+// 		return
+// 	}
+
+	
+// }
+
 func (ua *UPIATMHandler) HandleCreateUPIQR(w http.ResponseWriter, r *http.Request) {
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {

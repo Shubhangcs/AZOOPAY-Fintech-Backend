@@ -40,6 +40,250 @@ func removeSpecialChars(s string) string {
 	return re.ReplaceAllString(s, "")
 }
 
+func (ph *PayoutHandler) HandleCreateBoompayPayout(w http.ResponseWriter, r *http.Request) {
+	if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayout); err != nil {
+		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("payout service is currently unavailable"))
+		return
+	}
+
+	var req models.PayoutTransactionModel
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	if err := req.ValidateInitilizePayout(); err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	if len(req.RetailerID) == 0 || string(req.RetailerID[0]) != "R" {
+		utils.BadRequest(w, ph.logger, "create payout transaction", errors.New("invalid retailer id"))
+		return
+	}
+
+	req.APIProvider = "BOOM"
+	if err := ph.payoutStore.InitializePayoutTransaction(&req); err != nil {
+		if isPayoutClientErr(err) {
+			utils.BadRequest(w, ph.logger, "create payout transaction", err)
+			return
+		}
+		utils.ServerError(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	tokenRes, err := generateBoompayAccessToken()
+	if err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	// Hit the external payout API and auto-finalize based on the response.
+	apiResp, finalStatus, orderID, operatorTxnID := callBoompayPayoutAPI(ph.logger, &req, tokenRes.AccessToken)
+
+	if err := ph.payoutStore.FinalizePayout(req.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
+		utils.ServerError(w, ph.logger, "finalize payout transaction", err)
+		return
+	}
+
+	req.PayoutTransactionStatus = finalStatus
+	req.OrderID = orderID
+	req.OperatorTransactionID = operatorTxnID
+
+	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{
+		"message":            "payout transaction processed",
+		"payout_transaction": req,
+		"api_response":       apiResp,
+	})
+}
+
+func callBoompayPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel, token string) (resp *models.APIResponseModel, finalStatus, orderID, operatorTxnID string) {
+	finalStatus = "FAILED"
+
+	if utils.DevsidhAPI == "" || utils.DevsidhAPIPassword == "" || utils.DevsidhAPIToken == "" || utils.DevsidhAPIUsername == "" || utils.DevsidhPayout == "" {
+		logger.Error("boompay payout api not configured", "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	var apiResp models.BoompayPayoutAPIResponseModel
+	err := utils.PostRequest(
+		utils.BoompayAPI+utils.BoompayPayout,
+		"Authorization",
+		"Bearer "+token,
+		map[string]any{
+			"custAccountNumber": pt.AccountNumber,
+			"custIFSC":          pt.IFSCCode,
+			"custName":          removeSpecialChars(pt.BeneficiaryName),
+			"transferAmount":    pt.Amount,
+			"transferType":      pt.TransferType,
+			"custMobileNumber":  pt.MobileNumber,
+			"latitude":          pt.Latitude,
+			"longitude":         pt.Longitude,
+			"requestID":         pt.PartnerRequestID,
+		},
+		&apiResp,
+	)
+	if err != nil {
+		logger.Error("boompay payout api call failed", "error", err, "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	resp = &models.APIResponseModel{
+		Message:               apiResp.RequestStatus,
+		OrderID:               "NONE",
+		OperatorTransactionID: apiResp.UTR,
+		PartnerRequestID:      pt.PartnerRequestID,
+	}
+	orderID = "NONE"
+	operatorTxnID = apiResp.UTR
+
+	if apiResp.RequestStatus == "FAILED" {
+		logger.Error("boompay payout api error", "msg", apiResp.StatusCode, "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+
+	finalStatus = strings.ToUpper(apiResp.RequestStatus)
+	return
+}
+
+func generateBoompayAccessToken() (*models.BoompayAccessTokenAPIResponseModel, error) {
+	var res models.BoompayAccessTokenAPIResponseModel
+	if err := utils.GetRequest3(
+		utils.BoompayAPI+utils.BoompayPayoutAccessTokenGeneration,
+		"X-CLIENT-ID",
+		utils.BoompayClientID,
+		"X-API-TOKEN",
+		utils.BoompayAPIToken,
+		"X-API-SECRET",
+		utils.BoompayAPISecret,
+		&res,
+	); err != nil {
+		return nil, err
+	}
+
+	if !res.Success {
+		return nil, errors.New(res.Message)
+	}
+
+	return &res, nil
+}
+
+func (ph *PayoutHandler) HandleCheckBoompayPayoutStatus(w http.ResponseWriter, r *http.Request) {
+	payoutID, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ph.logger, "check payout status", err)
+		return
+	}
+
+	pt, err := ph.payoutStore.GetPayoutTransactionByID(payoutID)
+	if err != nil {
+		if err.Error() == "payout transaction not found" {
+			utils.BadRequest(w, ph.logger, "check payout status", err)
+			return
+		}
+		utils.ServerError(w, ph.logger, "check payout status", err)
+		return
+	}
+
+	// If already finalized, return current record without calling the API
+	// if pt.PayoutTransactionStatus != "PENDING" {
+	// 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+	// 		"message":            "payout already finalized",
+	// 		"payout_transaction": pt,
+	// 	})
+	// 	return
+	// }
+
+	res, err := generateToken()
+	if err != nil {
+		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+		return
+	}
+
+	apiResp, finalStatus, orderID, operatorTxnID := callBoompayPayoutStatusAPI(ph.logger, pt.PartnerRequestID, res.Token)
+
+	if err = ph.payoutStore.FinalizePayout(pt.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
+		utils.ServerError(w, ph.logger, "check payout status finalize", err)
+		return
+	}
+
+	pt.PayoutTransactionStatus = finalStatus
+	pt.OrderID = orderID
+	pt.OperatorTransactionID = operatorTxnID
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+		"message":            "payout status updated",
+		"payout_transaction": pt,
+		"api_response":       apiResp,
+	})
+}
+
+func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token string) (resp *models.BoompayStatusAPIResponseModel, finalStatus, orderID, operatorTxnID string) {
+	finalStatus = "PENDING"
+
+	if utils.BoompayAPI == "" || utils.BoompayPayoutStatusCheck == "" {
+		logger.Error("boompay payout api not configured", "payout_transaction_id", orderID)
+		return
+	}
+
+	var apiResp models.BoompayStatusAPIResponseModel
+	err := utils.PostRequest(
+		utils.BoompayAPI+utils.BoompayPayoutStatusCheck,
+		"Authorization", "Bearer "+token,
+		map[string]any{
+			"requestID": partnerRequestID,
+		},
+		&apiResp,
+	)
+	if err != nil {
+		logger.Error("payout status api call failed", "error", err, "payout_transaction_id", partnerRequestID)
+		return
+	}
+
+	resp = &apiResp
+	orderID = "NONE"
+	operatorTxnID = apiResp.Data.UTR
+
+	if !apiResp.Success {
+		logger.Error("boompay payout status api error", "msg", apiResp.Message, "payout_transaction_id", apiResp.Data.UTR)
+		return // stays PENDING
+	}
+
+	finalStatus = strings.ToUpper(apiResp.Status)
+	return
+}
+
+func (ah *PayoutHandler) HandleGetBoompayWalletBalance(w http.ResponseWriter, r *http.Request) {
+	if utils.BoompayAPI == "" || utils.BoompayPayoutWalletBalance == "" {
+		ah.logger.Error("cred error")
+		return
+	}
+
+	res, err := generateBoompayAccessToken()
+	if err != nil {
+		utils.BadRequest(w, ah.logger, "boompay wallet balance enquiry", err)
+		return
+	}
+
+	var resp struct {
+		Success       bool    `json:"success"`
+		Message       string  `json:"message"`
+		WalletDetails float64 `json:"walletDetails"`
+	}
+	if err := utils.GetRequest(
+		utils.BoompayAPI+utils.BoompayPayoutWalletBalance,
+		"Authorization", "Bearer "+res.AccessToken,
+		&resp,
+	); err != nil {
+		utils.ServerError(w, ah.logger, "get payntric balance", err)
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": resp.Message, "balance": resp})
+}
+
 func (ph *PayoutHandler) HandleCreatePayoutTransaction(w http.ResponseWriter, r *http.Request) {
 	if down, err := ph.apiDownStore.IsServiceDown(models.ServicePayout); err != nil {
 		utils.ServerError(w, ph.logger, "create payout transaction", err)

@@ -60,6 +60,7 @@ func adminRoutes(router *chi.Mux, app *app.Application) {
 		r.Get("/recharge-kit/primary-balance", app.AdminHandler.HandleGetRechargeKitPrimaryBalance)
 		r.Get("/payntric/balance", app.AdminHandler.HandleGetPayntricWalletBalance)
 		r.Get("/devsidh/balance", app.PayoutHandler.HandleGetDevsidhWalletBalance)
+		r.Get("/devsidh/balance", app.PayoutHandler.HandleGetBoompayWalletBalance)
 		r.Put("/update/{id}", app.AdminHandler.HandleUpdateAdminDetails)
 		r.Patch("/update/{id}/password", app.AdminHandler.HandleUpdateAdminPassword)
 		r.Patch("/update/{id}/wallet", app.AdminHandler.HandleUpdateAdminWalletBalance)
@@ -128,8 +129,8 @@ func retailerRoutes(router *chi.Mux, app *app.Application) {
 		r.Patch("/update/{id}/image/shop", app.RetailerHandler.HandleUpdateRetailerShopImage)
 		r.Patch("/update/{id}/hold-amount", app.RetailerHandler.HandleUpdateRetailerHoldAmount)
 		r.Delete("/delete/{id}", app.RetailerHandler.HandleDeleteRetailer)
-		r.Get("/get/refund-wallet-balance/{id}" , app.RetailerHandler.HandleGetRefundWalletBalance)
-		r.Post("/claim/refund-wallet-balance/{id}" , app.RetailerHandler.HandleClaimRefund)
+		r.Get("/get/refund-wallet-balance/{id}", app.RetailerHandler.HandleGetRefundWalletBalance)
+		r.Post("/claim/refund-wallet-balance/{id}", app.RetailerHandler.HandleClaimRefund)
 	})
 }
 
@@ -301,10 +302,12 @@ func payoutRoutes(router *chi.Mux, app *app.Application) {
 	router.Route("/payout", func(r chi.Router) {
 		r.Use(middlewares.AuthorizationMiddleware)
 
-		r.Post("/create", app.PayoutHandler.HandleCreatePayoutTransaction)
+		// r.Post("/create", app.PayoutHandler.HandleCreatePayoutTransaction)
+		r.Post("/create", app.PayoutHandler.HandleCreateBoompayPayout)
 		r.Post("/create/new", app.PayoutHandler.HandleCreatePayntricPayoutTransaction)
 		r.Post("/create/dev", app.PayoutHandler.HandleCreateDevsidhPayoutTransaction)
-		r.Post("/status-check/{id}", app.PayoutHandler.HandleCheckPayoutStatus)
+		// r.Post("/status-check/{id}", app.PayoutHandler.HandleCheckPayoutStatus)
+		r.Post("/status-check/{id}", app.PayoutHandler.HandleCheckBoompayPayoutStatus)
 		r.Post("/status-check/new/{id}", app.PayoutHandler.HandlePayntricCheckPayoutStatus)
 		r.Post("/status-check/dev/{id}", app.PayoutHandler.HandleCheckDevsidhPayoutStatus)
 		r.Post("/refund/{id}", app.PayoutHandler.HandleRefundPayout)

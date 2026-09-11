@@ -24,6 +24,23 @@ func NewPostgresUPIATMStore(db *sql.DB) *PostgresUPIATMStore {
 	}
 }
 
+// func (us *PostgresUPIATMStore) GetRetailerDetailsForSignup() {
+// 	query := `
+// 		SELECT
+// 			r.retailer_name,
+// 			r.retailer_email,
+// 			r.retailer_phone,
+// 			r.retailer_pan,
+// 			r.retailer_gender,
+// 			r.retailer_date_of_birth,
+// 			r.retailer_address,
+// 			r.retailer_city,
+// 			r.retailer_state,
+// 			r.retailer_aadhar,
+			
+// 	`
+// }
+
 func (us *PostgresUPIATMStore) CreateQR(retailerId string, req *models.UPIATMCreateQRAPIResponseModel) error {
 	query := `
 		INSERT INTO upi_atm (
