@@ -34,14 +34,20 @@ func (v *VerifyBeneficiaryRequest) Validate() error {
 }
 
 // VerifyBeneficiaryResponse mirrors the Paysprint penny drop response.
+// type VerifyBeneficiaryResponse struct {
+// 	StatusCode              int    `json:"statusCode"`
+// 	ReqStatus               string `json:"reqStatus"`
+// 	AccountValidationStatus string `json:"accountValidationStatus"`
+// 	BeneName                string `json:"beneName"`
+// 	BeneAccountNumber       string `json:"beneAccountNumber"`
+// 	BeneIFSC                string `json:"beneIFSC"`
+// 	UTR                     string `json:"utr"`
+// }
+
 type VerifyBeneficiaryResponse struct {
-	StatusCode              int    `json:"statusCode"`
-	ReqStatus               string `json:"reqStatus"`
-	AccountValidationStatus string `json:"accountValidationStatus"`
-	BeneName                string `json:"beneName"`
-	BeneAccountNumber       string `json:"beneAccountNumber"`
-	BeneIFSC                string `json:"beneIFSC"`
-	UTR                     string `json:"utr"`
+	Status  int    `json:"status"`
+	Message string `json:"msg"`
+	Data    any    `json:"cardData"`
 }
 
 func (b *BeneficiaryModel) Validate() error {
