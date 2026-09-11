@@ -258,6 +258,13 @@ func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token str
 		return
 	}
 
+	fmt.Println(
+		map[string]any{
+			"requestId": partnerRequestID,
+		},
+	)
+
+	fmt.Println(apiResp)
 	resp = &apiResp
 	orderID = "NONE"
 	operatorTxnID = apiResp.Data.UTR
