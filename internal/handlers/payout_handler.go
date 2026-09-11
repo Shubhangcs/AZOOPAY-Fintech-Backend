@@ -238,6 +238,7 @@ func (ph *PayoutHandler) HandleCheckBoompayPayoutStatus(w http.ResponseWriter, r
 
 func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token string) (resp *models.BoompayStatusAPIResponseModel, finalStatus, orderID, operatorTxnID string) {
 	finalStatus = "PENDING"
+	fmt.Println("HERE IS THE POINT")
 
 	if utils.BoompayAPI == "" || utils.BoompayPayoutStatusCheck == "" {
 		logger.Error("boompay payout api not configured", "payout_transaction_id", orderID)
@@ -254,7 +255,6 @@ func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token str
 		&apiResp,
 	)
 	if err != nil {
-		fmt.Println(err)
 		logger.Error("payout status api call failed", "error", err, "payout_transaction_id", partnerRequestID)
 		return
 	}
