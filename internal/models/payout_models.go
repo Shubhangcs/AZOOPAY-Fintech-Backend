@@ -27,6 +27,15 @@ type BoompayAccessTokenAPIResponseModel struct {
 }
 
 type BoompayPayoutAPIResponseModel struct {
+	Success    bool                      `json:"success"`
+	Message    string                    `json:"message"`
+	RequestID  string                    `json:"requestID"`
+	ResponseID string                    `json:"Responseid"`
+	Status     string                    `json:"status"`
+	Data       BoompayPayoutResponseData `json:"data"`
+}
+
+type BoompayPayoutResponseData struct {
 	StatusCode       int     `json:"statusCode"`
 	RequestStatus    string  `json:"reqStatus"`
 	CustIFSC         string  `json:"custIFSC"`

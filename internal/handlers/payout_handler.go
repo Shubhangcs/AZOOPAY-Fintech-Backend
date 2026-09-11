@@ -146,20 +146,20 @@ func callBoompayPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 	fmt.Println(apiResp)
 
 	resp = &models.APIResponseModel{
-		Message:               apiResp.RequestStatus,
+		Message:               apiResp.Data.RequestStatus,
 		OrderID:               "NONE",
-		OperatorTransactionID: apiResp.UTR,
+		OperatorTransactionID: apiResp.Data.UTR,
 		PartnerRequestID:      pt.PartnerRequestID,
 	}
 	orderID = "NONE"
-	operatorTxnID = apiResp.UTR
+	operatorTxnID = apiResp.Data.UTR
 
-	if apiResp.RequestStatus == "FAILED" {
-		logger.Error("boompay payout api error", "msg", apiResp.StatusCode, "payout_transaction_id", pt.PayoutTransactionID)
+	if apiResp.Data.RequestStatus == "FAILED" {
+		logger.Error("boompay payout api error", "msg", apiResp.Message, "payout_transaction_id", pt.PayoutTransactionID)
 		return
 	}
 
-	finalStatus = strings.ToUpper(apiResp.RequestStatus)
+	finalStatus = strings.ToUpper(apiResp.Data.RequestStatus)
 	return
 }
 
