@@ -193,8 +193,6 @@ func (ph *PayoutHandler) HandleCheckBoompayPayoutStatus(w http.ResponseWriter, r
 		return
 	}
 
-	fmt.Println(payoutID)
-
 	pt, err := ph.payoutStore.GetPayoutTransactionByID(payoutID)
 	if err != nil {
 		if err.Error() == "payout transaction not found" {
@@ -251,7 +249,7 @@ func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token str
 		utils.BoompayAPI+utils.BoompayPayoutStatusCheck,
 		"Authorization", "Bearer "+token,
 		map[string]any{
-			"requestId": partnerRequestID,
+			"requestID": partnerRequestID,
 		},
 		&apiResp,
 	)
@@ -260,13 +258,6 @@ func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token str
 		return
 	}
 
-	fmt.Println(
-		map[string]any{
-			"requestId": partnerRequestID,
-		},
-	)
-
-	fmt.Println(apiResp)
 	resp = &apiResp
 	orderID = "NONE"
 	operatorTxnID = apiResp.Data.UTR
