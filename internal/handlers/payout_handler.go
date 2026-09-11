@@ -193,6 +193,8 @@ func (ph *PayoutHandler) HandleCheckBoompayPayoutStatus(w http.ResponseWriter, r
 		return
 	}
 
+	fmt.Println(payoutID)
+
 	pt, err := ph.payoutStore.GetPayoutTransactionByID(payoutID)
 	if err != nil {
 		if err.Error() == "payout transaction not found" {
