@@ -212,13 +212,13 @@ func (ph *PayoutHandler) HandleCheckBoompayPayoutStatus(w http.ResponseWriter, r
 	// 	return
 	// }
 
-	res, err := generateToken()
+	res, err := generateBoompayAccessToken()
 	if err != nil {
 		utils.BadRequest(w, ph.logger, "create payout transaction", err)
 		return
 	}
 
-	apiResp, finalStatus, orderID, operatorTxnID := callBoompayPayoutStatusAPI(ph.logger, pt.PartnerRequestID, res.Token)
+	apiResp, finalStatus, orderID, operatorTxnID := callBoompayPayoutStatusAPI(ph.logger, pt.PartnerRequestID, res.AccessToken)
 
 	if err = ph.payoutStore.FinalizePayout(pt.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
 		utils.ServerError(w, ph.logger, "check payout status finalize", err)
