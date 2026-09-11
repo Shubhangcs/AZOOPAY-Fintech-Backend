@@ -249,7 +249,7 @@ func callBoompayPayoutStatusAPI(logger *slog.Logger, partnerRequestID, token str
 		utils.BoompayAPI+utils.BoompayPayoutStatusCheck,
 		"Authorization", "Bearer "+token,
 		map[string]any{
-			"requestID": partnerRequestID,
+			"requestId": partnerRequestID,
 		},
 		&apiResp,
 	)
