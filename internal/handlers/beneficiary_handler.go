@@ -135,7 +135,7 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 	}
 
 	if apiResp.StatusCode != 200 {
-		utils.BadRequest(w, bh.logger, "verify beneficiary", fmt.Errorf("penny drop api error: %d", apiResp.StatusCode))
+		utils.BadRequest(w, bh.logger, "verify beneficiary", fmt.Errorf("penny drop api error: %v", apiResp))
 		return
 	}
 
