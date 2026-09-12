@@ -93,54 +93,6 @@ func (bh *BeneficiaryHandler) HandleDeleteBeneficiary(w http.ResponseWriter, r *
 
 // Verify Beneficiary Handler
 func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *http.Request) {
-	// 	var req models.VerifyBeneficiaryRequest
-	// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-	// 		utils.BadRequest(w, bh.logger, "verify beneficiary", err)
-	// 		return
-	// 	}
-
-	// 	if err := req.Validate(); err != nil {
-	// 		utils.BadRequest(w, bh.logger, "verify beneficiary", err)
-	// 		return
-	// 	}
-
-	// 	claims := r.Context().Value("claims").(*utils.TokenClaims)
-	// 	retailerID := claims.UserID
-	// 	adminID := claims.AdminID
-
-	// 	partnerRequestID := uuid.NewString()
-
-	// 	if err := bh.beneficiaryStore.ChargeForVerification(adminID, retailerID, partnerRequestID); err != nil {
-	// 		utils.BadRequest(w, bh.logger, "verify beneficiary: wallet debit", err)
-	// 		return
-	// 	}
-
-	// 	tokenData, err := generateBoompayAccessToken()
-	// 	if err != nil {
-	// 		utils.BadRequest(w, bh.logger, "verify beneficiary: token generation", err)
-	// 		return
-	// 	}
-
-	// 	var apiResp models.VerifyBeneficiaryResponse
-	// 	err = utils.PostRequest(utils.BoompayAPI+utils.BoompayPennyDrop, "Authorization", "Bearer "+tokenData.AccessToken, map[string]any{
-	// 		"Requestid":         partnerRequestID,
-	// 		"custIFSC":          req.IFSCCode,
-	// 		"custAccountNumber": req.AccountNumber,
-	// 		"verificationType":  "IMPS_PENNY_DROP",
-	// 	}, &apiResp)
-	// 	if err != nil {
-	// 		utils.ServerError(w, bh.logger, "verify beneficiary: paysprint call", err)
-	// 		return
-	// 	}
-
-	// 	if apiResp.StatusCode != 200 {
-	// 		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New("penny drop api error"))
-	// 		return
-	// 	}
-
-	// 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": apiResp})
-	// }
-
 	var req models.VerifyBeneficiaryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.BadRequest(w, bh.logger, "verify beneficiary", err)
@@ -163,25 +115,40 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		return
 	}
 
-	var apiResp models.VerifyBeneficiaryResponse
-	err := utils.PostRequest(utils.RechargeKitVerifyAPI+utils.PennyDrop, "Authorization", "Bearer "+utils.RechargeKitAPIToken, map[string]any{
-		"partner_request_id": partnerRequestID,
-		"bank_account":       req.AccountNumber,
-		"payment_mode":       1,
-		"beneficiary_name":   "",
-		"ifsc_code":          req.IFSCCode,
+	tokenData, err := generateBoompayAccessToken()
+	if err != nil {
+		utils.BadRequest(w, bh.logger, "verify beneficiary: token generation", err)
+		return
+	}
+
+	var apiResp models.VerifyBeneficiaryBoompayResponse
+	err = utils.PostRequest(utils.BoompayAPI+utils.BoompayPennyDrop, "Authorization", "Bearer "+tokenData.AccessToken, map[string]any{
+		"Requestid":         partnerRequestID,
+		"custIFSC":          req.IFSCCode,
+		"custAccountNumber": req.AccountNumber,
+		"verificationType":  "IMPS_PENNY_DROP",
 	}, &apiResp)
 	if err != nil {
 		utils.ServerError(w, bh.logger, "verify beneficiary: paysprint call", err)
 		return
 	}
 
-	if apiResp.Status == 3 || apiResp.Status == 2 {
-		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New(apiResp.Message))
+	if apiResp.StatusCode != 200 {
+		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New("penny drop api error"))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": apiResp.Data})
+	res := models.VerifyBeneficiaryResponse{
+		Status:  1,
+		Message: apiResp.AccountValidationStatus,
+		Data: map[string]any{
+			"beneficiary_name": apiResp.BeneName,
+			"bank":             apiResp.BeneAccountNumber,
+			"branch_name":      apiResp.BeneName,
+		},
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": res})
 }
 
 // Get Beneficiaries Handler
