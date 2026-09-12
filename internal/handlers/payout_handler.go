@@ -297,7 +297,11 @@ func (ah *PayoutHandler) HandleGetBoompayWalletBalance(w http.ResponseWriter, r 
 		utils.ServerError(w, ah.logger, "get payntric balance", err)
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": resp.Message, "balance": resp})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": resp.Message, "balance": map[string]any{
+		"error":                0,
+		"message":              resp.Message,
+		"payout_wallet_amount": resp.WalletDetails,
+	}})
 }
 
 func (ph *PayoutHandler) HandleCreatePayoutTransaction(w http.ResponseWriter, r *http.Request) {
