@@ -101,6 +101,8 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 	}
 
 	if pt.Amount >= 100 && pt.Amount < 1000 {
+		totalDeduction = pt.Amount + 10.0
+		commision.TotalCommision = 10.0
 		commision.AdminCommision = 10.0
 		commision.RetailerCommision = 0.0
 		commision.MasterDistributorCommision = 0.0
