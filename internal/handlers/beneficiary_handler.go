@@ -122,7 +122,7 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		return
 	}
 
-	var apiResp models.VerifyBeneficiaryBoompayResponse
+	var apiResp models.VerifyBoompayResponse
 	err = utils.PostRequest(utils.BoompayAPI+utils.BoompayPennyDrop, "Authorization", "Bearer "+tokenData.AccessToken, map[string]any{
 		"Requestid":         partnerRequestID,
 		"custIFSC":          req.IFSCCode,
@@ -134,18 +134,18 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 		return
 	}
 
-	if apiResp.StatusCode != 200 {
+	if !apiResp.Success {
 		utils.BadRequest(w, bh.logger, "verify beneficiary", fmt.Errorf("penny drop api error: %v", apiResp))
 		return
 	}
 
 	res := models.VerifyBeneficiaryResponse{
 		Status:  1,
-		Message: apiResp.AccountValidationStatus,
+		Message: apiResp.Data.AccountValidationStatus,
 		Data: map[string]any{
-			"beneficiary_name": apiResp.BeneName,
-			"bank":             apiResp.BeneAccountNumber,
-			"branch_name":      apiResp.BeneName,
+			"beneficiary_name": apiResp.Data.BeneName,
+			"bank":             apiResp.Data.BeneAccountNumber,
+			"branch_name":      apiResp.Data.BeneName,
 		},
 	}
 

@@ -43,6 +43,12 @@ type VerifyBeneficiaryBoompayResponse struct {
 	UTR                     string `json:"utr"`
 }
 
+type VerifyBoompayResponse struct {
+	Success bool                             `json:"success"`
+	Message string                           `json:"message"`
+	Data    VerifyBeneficiaryBoompayResponse `json:"data"`
+}
+
 type VerifyBeneficiaryResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"msg"`
