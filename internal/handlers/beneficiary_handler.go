@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -134,7 +135,7 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 	}
 
 	if apiResp.StatusCode != 200 {
-		utils.BadRequest(w, bh.logger, "verify beneficiary", errors.New("penny drop api error"))
+		utils.BadRequest(w, bh.logger, "verify beneficiary", fmt.Errorf("penny drop api error: %d", apiResp.StatusCode))
 		return
 	}
 
