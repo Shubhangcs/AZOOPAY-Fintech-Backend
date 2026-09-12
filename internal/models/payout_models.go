@@ -26,25 +26,22 @@ type BoompayAccessTokenAPIResponseModel struct {
 	AccessToken string `json:"access_token"`
 }
 
-type BoompayPayoutAPIResponseModel struct {
-	Success    bool                      `json:"success"`
-	Message    string                    `json:"message"`
-	RequestID  string                    `json:"requestID"`
-	ResponseID string                    `json:"Responseid"`
-	Status     string                    `json:"status"`
-	Data       BoompayPayoutResponseData `json:"data"`
+type TransferBoompayResponse struct {
+	Success bool                `json:"success"`
+	Message string              `json:"message"`
+	Data    TransferBoompayData `json:"data"`
 }
 
-type BoompayPayoutResponseData struct {
-	StatusCode       int     `json:"statusCode"`
-	RequestStatus    string  `json:"reqStatus"`
-	CustIFSC         string  `json:"custIFSC"`
-	CustAccNumber    string  `json:"custAccountNumber"`
-	CustName         string  `json:"custName"`
-	CustMobileNumber string  `json:"custMobileNumber"`
-	TransferAmount   float64 `json:"transferAmount"`
-	TransferType     string  `json:"transferType"`
-	UTR              string  `json:"utr"`
+type TransferBoompayData struct {
+	StatusCode        int    `json:"statusCode"`
+	ReqStatus         string `json:"reqStatus"`
+	CustIFSC          string `json:"custIFSC"`
+	CustAccountNumber string `json:"custAccountNumber"`
+	CustName          string `json:"custName"`
+	CustMobileNumber  string `json:"custMobileNumber"`
+	TransferAmount    int    `json:"transferAmount"`
+	TransferType      string `json:"transferType"`
+	UTR               string `json:"utr"`
 }
 
 type BoompayStatusAPIResponseModel struct {
