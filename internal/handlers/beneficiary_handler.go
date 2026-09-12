@@ -140,22 +140,48 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 	}
 
 	res := models.VerifyBeneficiaryResponse{
-		Status:  1,
-		Message: apiResp.Data.AccountValidationStatus,
+		// Status:  1,
+		// Message: apiResp.Data.AccountValidationStatus,
 		Data: map[string]any{
 			"code":    apiResp.Data.StatusCode,
 			"message": apiResp.Message,
 			"response": map[string]any{
 				"account_details": map[string]any{
 					"beneficiary_name": apiResp.Data.BeneName,
-					"bank_name":        apiResp.Data.BeneAccountNumber,
+					"bank":             apiResp.Data.BeneAccountNumber,
 					"branch_name":      apiResp.Data.BeneName,
 				},
 			},
 		},
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": res})
+	// 	{
+	//   "data": {
+	//     "code": 200,
+	//     "message": "Success",
+	//     "request_id": "88f9b03e-3869-41f6-8cc3-74c241675889",
+	//     "response": {
+	//       "account_details": {
+	//         "account_status": "ACTIVE",
+	//         "bank_name": "State Bank of India",
+	//         "beneficiary_account": "38600715450",
+	//         "beneficiary_ifsc": "SBIN0040140",
+	//         "beneficiary_name": "Mr. C S SHUBHANGA",
+	//         "branch_name": "MEGARAVALLI"
+	//       },
+	//       "created_at": 1789197019,
+	//       "message": "Bank Account details verified successfully",
+	//       "mode": "BANK_VALIDATE",
+	//       "newcode": "00",
+	//       "rrn": "625512003826"
+	//     },
+	//     "status": "success",
+	//     "timestamp": "2026-09-12T12:40:18+05:30"
+	//   },
+	//   "message": "beneficiary verified successfully"
+	// }
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiary verified successfully", "data": res.Data})
 }
 
 // Get Beneficiaries Handler
