@@ -148,7 +148,7 @@ func (bh *BeneficiaryHandler) HandleVerifyBeneficiary(w http.ResponseWriter, r *
 			"response": map[string]any{
 				"account_details": map[string]any{
 					"beneficiary_name": apiResp.Data.BeneName,
-					"bank":             apiResp.Data.BeneAccountNumber,
+					"bank_name":        apiResp.Data.BeneAccountNumber,
 					"branch_name":      apiResp.Data.BeneName,
 				},
 			},
