@@ -122,7 +122,7 @@ func (ps *PostgresPayoutTransactionStore) InitializePayoutTransaction(pt *models
 		totalDeduction = pt.Amount + 20.0
 		commision.TotalCommision = 20.0
 		commision.AdminCommision = 10.0
-		commision.RetailerCommision = 0.10
+		commision.RetailerCommision = 10.0
 		commision.MasterDistributorCommision = 0.0
 		commision.DistributorCommision = 0.0
 	}
