@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -166,6 +167,7 @@ func creditCardPayment(req *models.CreateCreditCardPaymentTransactionRequestMode
 	); err != nil {
 		return nil, err
 	}
+	fmt.Println(res)
 
 	if res.Status == 3 {
 		return &res, errors.New(res.Message)
