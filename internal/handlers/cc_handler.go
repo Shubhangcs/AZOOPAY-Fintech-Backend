@@ -161,6 +161,7 @@ func creditCardPayment(req *models.CreateCreditCardPaymentTransactionRequestMode
 			"beneficiary_name":   req.BeneDetails.BeneficiaryName,
 			"amount":             req.Amount,
 			"partner_request_id": req.PartnerRequestID,
+			"transfer_type":      "5",
 			"operator_code":      req.BeneDetails.OperatorCode,
 		},
 		&res,
