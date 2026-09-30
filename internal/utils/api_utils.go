@@ -54,7 +54,7 @@ const (
 	AEPSBankList                       = "/aeps/banks"
 	AEPSGenerateOTP                    = "/aeps/transaction-otp"
 	CCOperatorsFetch                   = "/recharge/servicewiseOperatorFetch?operator_category=11"
-	CCBillPayment                      = "/rkitcc/ccPayment"
+	CCBillPayment                      = "/rkitcc/v3/ccPayment"
 	UPIATMCreateQR                     = "/upiatm/qr-generate"
 	UPIATMCheckQRTransactionStatus     = "/upiatm/qr-status"
 	DevsidhPayout                      = "/Payout/payouttransaction"
