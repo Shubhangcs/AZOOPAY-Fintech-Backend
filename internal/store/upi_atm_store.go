@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/levionstudio/fintech/internal/models"
 	"github.com/levionstudio/fintech/internal/utils"
@@ -85,6 +86,15 @@ func (us *PostgresUPIATMStore) ValidateRetailerForQR(retailerId string, amount f
 }
 
 func (us *PostgresUPIATMStore) CreateQR(retailerId string, req *models.UPIATMCreateQRAPIResponseModel) error {
+	qrStatus, ok := NormalizeUPIATMQRStatus(req.QRStatus)
+	if !ok {
+		qrStatus = "INITIATED"
+	}
+	settlementStatus, ok := NormalizeUPIATMSettlementStatus(req.SettlementStatus)
+	if !ok {
+		settlementStatus = "PENDING"
+	}
+
 	query := `
 		INSERT INTO upi_atm (
 			retailer_id,
@@ -116,8 +126,8 @@ func (us *PostgresUPIATMStore) CreateQR(retailerId string, req *models.UPIATMCre
 		req.CommissionAmount,
 		req.TDSAmount,
 		req.NETAmount,
-		req.SettlementStatus,
-		req.QRStatus,
+		settlementStatus,
+		qrStatus,
 	)
 	if err != nil {
 		return err
@@ -154,6 +164,40 @@ func isUPIATMFinalQRStatus(status string) bool {
 	return status == "SUCCESS" || status == "FAILED"
 }
 
+// NormalizeUPIATMQRStatus maps a Payntric qrStatus onto the values allowed by
+// the upi_atm_qr_status_check constraint (INITIATED, PENDING, SUCCESS, FAILED).
+// ok is false for values it does not recognise.
+func NormalizeUPIATMQRStatus(status string) (string, bool) {
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case "INITIATED", "CREATED", "INITIALIZED":
+		return "INITIATED", true
+	case "PENDING", "PROCESSING", "IN_PROGRESS", "INPROGRESS":
+		return "PENDING", true
+	case "SUCCESS", "SUCCESSFUL", "COMPLETED", "PAID":
+		return "SUCCESS", true
+	case "FAILED", "FAILURE", "EXPIRED", "TIMEOUT", "CANCELLED", "CANCELED", "REJECTED", "DECLINED":
+		return "FAILED", true
+	default:
+		return "", false
+	}
+}
+
+// NormalizeUPIATMSettlementStatus maps a Payntric settlementStatus onto the
+// values allowed by the upi_atm_settlement_status_check constraint
+// (PENDING, SUCCESS, FAILED). Payntric documents SETTLED for a completed settlement.
+func NormalizeUPIATMSettlementStatus(status string) (string, bool) {
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case "PENDING", "PROCESSING", "INITIATED":
+		return "PENDING", true
+	case "SETTLED", "SUCCESS", "SUCCESSFUL", "COMPLETED":
+		return "SUCCESS", true
+	case "FAILED", "FAILURE", "REJECTED":
+		return "FAILED", true
+	default:
+		return "", false
+	}
+}
+
 // FinilizeQRStatus records the latest provider status. The retailer wallet is
 // debited with the QR amount exactly once, on the first transition into SUCCESS.
 func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransactionStatusAPIResponseModel) error {
@@ -183,11 +227,16 @@ func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransac
 		return err
 	}
 
-	newQRStatus := req.QRStatus
-	if isUPIATMFinalQRStatus(currentQRStatus) {
+	// Unrecognised provider values are not written (they would violate the
+	// table's CHECK constraints); the current value is kept and the QR stays
+	// in the poller until a known status arrives.
+	newQRStatus, ok := NormalizeUPIATMQRStatus(req.QRStatus)
+	if !ok || isUPIATMFinalQRStatus(currentQRStatus) {
 		// QR outcome is already final; only the settlement status may still move.
 		newQRStatus = currentQRStatus
 	}
+
+	newSettlementStatus, _ := NormalizeUPIATMSettlementStatus(req.SettlementStatus)
 
 	if !isUPIATMFinalQRStatus(currentQRStatus) && newQRStatus == "SUCCESS" {
 		rtTableInfo, err := getUserTableInfo(retailerId)
@@ -222,7 +271,7 @@ func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransac
 		WHERE request_id = $3;
 	`
 
-	res, err := tx.Exec(updateQuery, newQRStatus, req.SettlementStatus, req.RequestID)
+	res, err := tx.Exec(updateQuery, newQRStatus, newSettlementStatus, req.RequestID)
 	if err != nil {
 		return err
 	}

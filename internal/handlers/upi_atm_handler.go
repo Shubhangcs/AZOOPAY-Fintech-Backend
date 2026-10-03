@@ -167,6 +167,14 @@ func (ua *UPIATMHandler) HandleCheckQRTransactionStatus(w http.ResponseWriter, r
 		return
 	}
 
+	// Return the same normalised values that were stored.
+	if qrStatus, ok := store.NormalizeUPIATMQRStatus(apiRes.QRStatus); ok {
+		apiRes.QRStatus = qrStatus
+	}
+	if settlementStatus, ok := store.NormalizeUPIATMSettlementStatus(apiRes.SettlementStatus); ok {
+		apiRes.SettlementStatus = settlementStatus
+	}
+
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": apiRes.Message, "response": apiRes})
 }
 
@@ -237,6 +245,13 @@ func (ua *UPIATMHandler) pollPendingQRs(ctx context.Context) {
 		if err != nil {
 			ua.logger.Warn("upi atm poller: status check", "request_id", qr.RequestID, "error", err)
 			continue
+		}
+
+		if _, ok := store.NormalizeUPIATMQRStatus(apiRes.QRStatus); !ok {
+			ua.logger.Warn("upi atm poller: unknown qr status from provider, keeping current status", "request_id", qr.RequestID, "qr_status", apiRes.QRStatus, "message", apiRes.Message)
+		}
+		if _, ok := store.NormalizeUPIATMSettlementStatus(apiRes.SettlementStatus); !ok && apiRes.SettlementStatus != "" {
+			ua.logger.Warn("upi atm poller: unknown settlement status from provider, keeping current status", "request_id", qr.RequestID, "settlement_status", apiRes.SettlementStatus)
 		}
 
 		apiRes.RequestID = qr.RequestID
