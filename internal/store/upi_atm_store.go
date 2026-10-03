@@ -166,7 +166,9 @@ func isUPIATMFinalQRStatus(status string) bool {
 
 // NormalizeUPIATMQRStatus maps a Payntric qrStatus onto the values allowed by
 // the upi_atm_qr_status_check constraint (INITIATED, PENDING, SUCCESS, FAILED).
-// ok is false for values it does not recognise.
+// ok is false for values it does not recognise. REVERSED is not in the Payntric
+// docs but is returned as a terminal status when the payment is reversed to the
+// customer, so it is treated as FAILED (no wallet debit).
 func NormalizeUPIATMQRStatus(status string) (string, bool) {
 	switch strings.ToUpper(strings.TrimSpace(status)) {
 	case "INITIATED", "CREATED", "INITIALIZED":
@@ -175,7 +177,7 @@ func NormalizeUPIATMQRStatus(status string) (string, bool) {
 		return "PENDING", true
 	case "SUCCESS", "SUCCESSFUL", "COMPLETED", "PAID":
 		return "SUCCESS", true
-	case "FAILED", "FAILURE", "EXPIRED", "TIMEOUT", "CANCELLED", "CANCELED", "REJECTED", "DECLINED":
+	case "FAILED", "FAILURE", "EXPIRED", "TIMEOUT", "CANCELLED", "CANCELED", "REJECTED", "DECLINED", "REVERSED":
 		return "FAILED", true
 	default:
 		return "", false
@@ -184,14 +186,16 @@ func NormalizeUPIATMQRStatus(status string) (string, bool) {
 
 // NormalizeUPIATMSettlementStatus maps a Payntric settlementStatus onto the
 // values allowed by the upi_atm_settlement_status_check constraint
-// (PENDING, SUCCESS, FAILED). Payntric documents SETTLED for a completed settlement.
+// (PENDING, SUCCESS, FAILED). Payntric documents SETTLED for a completed settlement;
+// NOT_APPLICABLE (undocumented) is returned when no settlement happens, e.g. for
+// reversed payments, and is stored as FAILED.
 func NormalizeUPIATMSettlementStatus(status string) (string, bool) {
 	switch strings.ToUpper(strings.TrimSpace(status)) {
 	case "PENDING", "PROCESSING", "INITIATED":
 		return "PENDING", true
 	case "SETTLED", "SUCCESS", "SUCCESSFUL", "COMPLETED":
 		return "SUCCESS", true
-	case "FAILED", "FAILURE", "REJECTED":
+	case "FAILED", "FAILURE", "REJECTED", "NOT_APPLICABLE":
 		return "FAILED", true
 	default:
 		return "", false
