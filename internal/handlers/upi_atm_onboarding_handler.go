@@ -273,10 +273,15 @@ func upiAtmMerchantSignup(data *models.UPIATMApplicationResponseModel) (*models.
 	}
 
 	if isUPIATMAPIFailure(res.Status) || res.SubMerchantID == "" {
-		if res.Message == "" {
-			return nil, errors.New("upi atm merchant signup failed")
+		msg := res.Message
+		if msg == "" {
+			msg = "upi atm merchant signup failed"
 		}
-		return nil, errors.New(res.Message)
+		// Validation failures carry the per-field reasons in "errors".
+		for field, reason := range res.Errors {
+			msg += "; " + field + ": " + reason
+		}
+		return nil, errors.New(msg)
 	}
 
 	return &res, nil

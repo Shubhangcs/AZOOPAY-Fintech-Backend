@@ -43,17 +43,18 @@ type UPIATMApplicationResponseModel struct {
 }
 
 type CreateUPIATMMerchantResponseModel struct {
-	Status            string `json:"status"`
-	StatusCode        string `json:"statusCode"`
-	Message           string `json:"message"`
-	SubMerchantID     string `json:"subMerchantId"`
-	ParentMerchantID  string `json:"parentMerchantId"`
-	OutletID          string `json:"outletId"`
-	MinKYCStatus      string `json:"minKycStatus"`
-	EKYCStatus        string `json:"ekycStatus"`
-	MobileChangeState string `json:"mobileChangeState"`
-	IPayUUID          string `json:"ipayUuid"`
-	Timestamp         string `json:"timestamp"`
+	Status            string            `json:"status"`
+	StatusCode        string            `json:"statusCode"`
+	Message           string            `json:"message"`
+	SubMerchantID     string            `json:"subMerchantId"`
+	ParentMerchantID  string            `json:"parentMerchantId"`
+	OutletID          string            `json:"outletId"`
+	MinKYCStatus      string            `json:"minKycStatus"`
+	EKYCStatus        string            `json:"ekycStatus"`
+	MobileChangeState string            `json:"mobileChangeState"`
+	IPayUUID          string            `json:"ipayUuid"`
+	Timestamp         string            `json:"timestamp"`
+	Errors            map[string]string `json:"errors,omitempty"`
 	MerchantData      struct {
 		Name        string `json:"name"`
 		DateOfBirth string `json:"dateOfBirth"`

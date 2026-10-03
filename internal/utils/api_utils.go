@@ -55,7 +55,7 @@ const (
 	AEPSGenerateOTP                    = "/aeps/transaction-otp"
 	CCOperatorsFetch                   = "/recharge/servicewiseOperatorFetch?operator_category=11"
 	CCBillPayment                      = "/rkitcc/v3/ccPayment"
-	UPIATMSubMerchantSignup            = "/submerchant/aeps/signup-min-kyc"
+	UPIATMSubMerchantSignup            = "/submerchant/signup-min-kyc"
 	UPIATMMerchantEKYCStatusCheck      = "/submerchant/aeps/ekyc-status"
 	UPIATMBiometricKYC                 = "/submerchant/aeps/biometric-kyc"
 	UPIATMCreateQR                     = "/upiatm/qr-generate"
