@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -14,28 +13,16 @@ import (
 )
 
 type UPIATMHandler struct {
-	aepsStore   store.AEPSStore
 	upiAtmStore store.UPIATMStore
 	logger      *slog.Logger
 }
 
-func NewUPIATMHandler(logger *slog.Logger, upiAtmStore store.UPIATMStore, aepsStore store.AEPSStore) *UPIATMHandler {
+func NewUPIATMHandler(logger *slog.Logger, upiAtmStore store.UPIATMStore) *UPIATMHandler {
 	return &UPIATMHandler{
-		aepsStore,
 		upiAtmStore,
 		logger,
 	}
 }
-
-// func (ua *UPIATMHandler) HandleSubMerchantSignup(w http.ResponseWriter, r *http.Request) {
-// 	retailerId, err := utils.ReadParamID(r)
-// 	if err != nil {
-// 		utils.BadRequest(w, ua.logger, "upi atm sub merchant signup", err)
-// 		return
-// 	}
-
-	
-// }
 
 func (ua *UPIATMHandler) HandleCreateUPIQR(w http.ResponseWriter, r *http.Request) {
 	retailerId, err := utils.ReadParamID(r)
@@ -50,11 +37,32 @@ func (ua *UPIATMHandler) HandleCreateUPIQR(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	details, err := ua.aepsStore.GetAEPSDetailsByRetailerID(retailerId)
+	if req.Amount < 50 || req.Amount > 50000 {
+		utils.BadRequest(w, ua.logger, "create upi qr", errors.New("amount must be between 50 and 50000"))
+		return
+	}
+
+	if len(req.Mobile) != 10 {
+		utils.BadRequest(w, ua.logger, "create upi qr", errors.New("mobile must be a 10-digit number"))
+		return
+	}
+
+	details, err := ua.upiAtmStore.GetUPIATMDetailsByRetailerID(retailerId)
 	if err != nil {
 		utils.ServerError(w, ua.logger, "create upi qr", err)
 		return
 	}
+
+	if details.IsMerchantBlocked {
+		utils.BadRequest(w, ua.logger, "create upi qr", errors.New("upi atm merchant is blocked"))
+		return
+	}
+
+	if details.EKYCStatus != "APPROVED" {
+		utils.BadRequest(w, ua.logger, "create upi qr", errors.New("upi atm merchant ekyc is not approved"))
+		return
+	}
+
 	var apiReq models.UPIATMCreateQRAPIRequestModel
 	apiReq.RequestData = &req
 	apiReq.RetailerID = retailerId
@@ -62,6 +70,11 @@ func (ua *UPIATMHandler) HandleCreateUPIQR(w http.ResponseWriter, r *http.Reques
 	apiReq.Latitude = details.Latitude
 	apiReq.Longitude = details.Longitude
 	apiReq.OutletID = details.OutletID
+
+	if req.Latitude != "" && req.Longitude != "" {
+		apiReq.Latitude = req.Latitude
+		apiReq.Longitude = req.Longitude
+	}
 
 	apiRes, err := createUpiQr(&apiReq)
 	if err != nil {
@@ -98,19 +111,16 @@ func createUpiQr(req *models.UPIATMCreateQRAPIRequestModel) (*models.UPIATMCreat
 		return nil, err
 	}
 
-	fmt.Println(map[string]any{
-		"requestId": req.RequestID,
-		"amount":    req.RequestData.Amount,
-		"mobile":    req.RequestData.Mobile,
-		"latitude":  req.Latitude,
-		"longitude": req.Longitude,
-		"outletId":  req.OutletID,
-	})
-
-	fmt.Println(res)
-
-	if res.Status == "FAILED" {
+	if res.Status != "SUCCESS" || res.TransactionID == "" {
+		if res.Message == "" {
+			return nil, errors.New("upi atm qr generation failed")
+		}
 		return nil, errors.New(res.Message)
+	}
+
+	// Some providers do not echo requestId back; it is our key for status checks.
+	if res.RequestID == "" {
+		res.RequestID = req.RequestID
 	}
 
 	return &res, nil
@@ -137,11 +147,11 @@ func (ua *UPIATMHandler) HandleCheckQRTransactionStatus(w http.ResponseWriter, r
 		return
 	}
 
-	if apiRes.Status != "PENDING" {
-		if err := ua.upiAtmStore.FinilizeQRStatus(apiRes); err != nil {
-			utils.ServerError(w, ua.logger, "check upi qr status", err)
-			return
-		}
+	// Always key the update on our stored request id.
+	apiRes.RequestID = apiReq.RequestID
+
+	if err := ua.upiAtmStore.FinilizeQRStatus(apiRes); err != nil {
+		utils.ServerError(w, ua.logger, "check upi qr status", err)
 		return
 	}
 
@@ -167,7 +177,12 @@ func checkQRTransactionStatus(req *models.UPIATMCheckQRTransactionStatusAPIReque
 		return nil, err
 	}
 
-	if res.Status == "FAILED" && res.QRStatus == "" {
+	// A FAILED status without a qrStatus is an API error (not found, auth, system),
+	// not a transaction outcome.
+	if res.QRStatus == "" {
+		if res.Message == "" {
+			return nil, errors.New("upi atm qr status check failed")
+		}
 		return nil, errors.New(res.Message)
 	}
 
@@ -181,7 +196,9 @@ func (ua *UPIATMHandler) HandleGetUPIATMTransactionsByRetailerID(w http.Response
 		return
 	}
 
-	res, err := ua.upiAtmStore.GetUPIATMTransactionsByRetailerID(retailerId)
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ua.upiAtmStore.GetUPIATMTransactionsByRetailerID(retailerId, qp)
 	if err != nil {
 		utils.ServerError(w, ua.logger, "get upi atm transactions by retailer id", err)
 		return
@@ -191,9 +208,11 @@ func (ua *UPIATMHandler) HandleGetUPIATMTransactionsByRetailerID(w http.Response
 }
 
 func (ua *UPIATMHandler) HandleGetAllUPIATMTransactions(w http.ResponseWriter, r *http.Request) {
-	res, err := ua.upiAtmStore.GetALLUPIATMTransactions()
+	qp := utils.ReadQueryParams(r)
+
+	res, err := ua.upiAtmStore.GetALLUPIATMTransactions(qp)
 	if err != nil {
-		utils.ServerError(w, ua.logger, "get upi atm transactions by retailer id", err)
+		utils.ServerError(w, ua.logger, "get all upi atm transactions", err)
 		return
 	}
 

@@ -39,6 +39,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	aepsOnboardingRoutes(router, app)
 	aepsRoutes(router, app)
 	ccBillRoutes(router, app)
+	upiAtmOnboardingRoutes(router, app)
 	upiAtmRoutes(router, app)
 
 	return router
@@ -470,6 +471,23 @@ func ccBillRoutes(router *chi.Mux, app *app.Application) {
 		r.Put("/update", app.CCHandler.HandleUpdateCCBeneficiary)
 		r.Delete("/delete/{id}", app.CCHandler.HandleDeleteCCBeneficiary)
 		r.Post("/create/transaction/{id}", app.CCHandler.HandleCreditCardPayment)
+	})
+}
+
+func upiAtmOnboardingRoutes(router *chi.Mux, app *app.Application) {
+	router.Route("/upi-atm/onboarding", func(r chi.Router) {
+		r.Use(middlewares.AuthorizationMiddleware)
+
+		r.Post("/apply", app.UPIATMOnboardingHandler.HandleCreateUPIATMApplication)
+		r.Post("/app/change/status/{id}", app.UPIATMOnboardingHandler.HandleChangeUPIATMApplicationStatus)
+		r.Get("/signup/{id}", app.UPIATMOnboardingHandler.HandleSignupUPIATMMerchant)
+		r.Get("/check/ekyc/{id}", app.UPIATMOnboardingHandler.HandleCheckEKYCStatus)
+		r.Post("/bio/kyc/{id}", app.UPIATMOnboardingHandler.HandleBiometricKYC)
+		r.Get("/get/applications", app.UPIATMOnboardingHandler.HandleGetAllUPIATMApplications)
+		r.Get("/get/application/{id}", app.UPIATMOnboardingHandler.HandleGetUPIATMApplicationByRetailerID)
+		r.Get("/get/merchants", app.UPIATMOnboardingHandler.HandleGetAllUPIATMMerchants)
+		r.Get("/get/merchant/{id}", app.UPIATMOnboardingHandler.HandleGetUPIATMMerchantDetails)
+		r.Patch("/merchant/block/{id}", app.UPIATMOnboardingHandler.HandleChangeUPIATMMerchantBlockStatus)
 	})
 }
 
