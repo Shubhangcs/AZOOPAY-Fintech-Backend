@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/levionstudio/fintech/internal/models"
@@ -10,12 +11,19 @@ import (
 
 type UPIATMStore interface {
 	GetUPIATMDetailsByRetailerID(retailerId string) (*models.UPIATMDetailsModel, error)
+	ValidateRetailerForQR(retailerId string, amount float64) error
 	CreateQR(retailerId string, req *models.UPIATMCreateQRAPIResponseModel) error
 	GetQRDetailsForStatusCheck(requestId string) (*models.UPIATMCheckQRTransactionStatusAPIRequestModel, error)
 	FinilizeQRStatus(req *models.UPIATMCheckQRTransactionStatusAPIResponseModel) error
+	GetPendingQRsForStatusCheck(limit int) ([]models.UPIATMCheckQRTransactionStatusAPIRequestModel, error)
 	GetUPIATMTransactionsByRetailerID(retailerId string, p utils.QueryParams) ([]models.UPIATMTransactionResponseModel, error)
 	GetALLUPIATMTransactions(p utils.QueryParams) ([]models.UPIATMTransactionResponseModel, error)
 }
+
+// ErrUPIATMDebitFailed wraps the checkExistsTx reason ("insufficient balance" /
+// "retailer not found") when a QR payment succeeded but debitTx could not debit
+// the retailer. The QR is left non-final so the status poller retries the debit.
+var ErrUPIATMDebitFailed = errors.New("upi atm payment received but wallet debit failed")
 
 type PostgresUPIATMStore struct {
 	db          *sql.DB
@@ -54,6 +62,26 @@ func (us *PostgresUPIATMStore) GetUPIATMDetailsByRetailerID(retailerId string) (
 	}
 
 	return &res, nil
+}
+
+// ValidateRetailerForQR applies the same pre-checks the other wallet services
+// run before debiting (KYC, blocked, retailer_wallet_balance), since the QR
+// amount is debited from the wallet once the payment succeeds.
+func (us *PostgresUPIATMStore) ValidateRetailerForQR(retailerId string, amount float64) error {
+	rc, err := getRetailerDetails(us.db, retailerId)
+	if err != nil {
+		return err
+	}
+	if !rc.kyc {
+		return errors.New("retailer KYC is not verified")
+	}
+	if rc.blocked {
+		return errors.New("retailer is blocked")
+	}
+	if rc.balance < amount {
+		return errors.New("insufficient wallet balance")
+	}
+	return nil
 }
 
 func (us *PostgresUPIATMStore) CreateQR(retailerId string, req *models.UPIATMCreateQRAPIResponseModel) error {
@@ -127,7 +155,7 @@ func isUPIATMFinalQRStatus(status string) bool {
 }
 
 // FinilizeQRStatus records the latest provider status. The retailer wallet is
-// credited exactly once, on the first transition of the QR into SUCCESS.
+// debited with the QR amount exactly once, on the first transition into SUCCESS.
 func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransactionStatusAPIResponseModel) error {
 	tx, err := us.db.Begin()
 	if err != nil {
@@ -161,6 +189,31 @@ func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransac
 		newQRStatus = currentQRStatus
 	}
 
+	if !isUPIATMFinalQRStatus(currentQRStatus) && newQRStatus == "SUCCESS" {
+		rtTableInfo, err := getUserTableInfo(retailerId)
+		if err != nil {
+			return err
+		}
+
+		if err := debitTx(
+			tx,
+			transaction{
+				UserID:        retailerId,
+				ReferenceID:   req.RequestID,
+				Amount:        amount,
+				Reason:        "UPI_ATM",
+				Remarks:       "UPI ATM Amount Debit From: " + retailerId,
+				userTableInfo: *rtTableInfo,
+			},
+			us.walletStore,
+		); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return fmt.Errorf("%w: %w", ErrUPIATMDebitFailed, checkExistsTx(tx, rtTableInfo.TableName, rtTableInfo.IDColumnName, retailerId, "retailer"))
+			}
+			return err
+		}
+	}
+
 	updateQuery := `
 		UPDATE upi_atm
 		SET qr_status = COALESCE(NULLIF($1, ''), qr_status),
@@ -178,29 +231,52 @@ func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransac
 		return err
 	}
 
-	if !isUPIATMFinalQRStatus(currentQRStatus) && newQRStatus == "SUCCESS" {
-		rtTableInfo, err := getUserTableInfo(retailerId)
-		if err != nil {
-			return err
-		}
+	return tx.Commit()
+}
 
-		if err := creditTx(
-			tx,
-			transaction{
-				UserID:        retailerId,
-				ReferenceID:   req.RequestID,
-				Amount:        amount,
-				Reason:        "UPI_ATM",
-				Remarks:       "UPI ATM Amount Credit To: " + retailerId,
-				userTableInfo: *rtTableInfo,
-			},
-			us.walletStore,
+// GetPendingQRsForStatusCheck returns QRs whose outcome is not final yet,
+// oldest first. QRs older than a day are skipped so unknown/abandoned
+// transactions are not polled forever.
+func (us *PostgresUPIATMStore) GetPendingQRsForStatusCheck(limit int) ([]models.UPIATMCheckQRTransactionStatusAPIRequestModel, error) {
+	query := `
+		SELECT
+			o.request_id,
+			o.transaction_id,
+			o.ipay_id,
+			n.outlet_id
+		FROM upi_atm o
+		JOIN upi_atm_merchant_details n ON n.retailer_id = o.retailer_id
+		WHERE o.qr_status NOT IN ('SUCCESS', 'FAILED')
+		AND o.created_at >= NOW() - INTERVAL '1 day'
+		ORDER BY o.created_at ASC
+		LIMIT $1;
+	`
+
+	rows, err := us.db.Query(query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []models.UPIATMCheckQRTransactionStatusAPIRequestModel
+	for rows.Next() {
+		var r models.UPIATMCheckQRTransactionStatusAPIRequestModel
+		if err := rows.Scan(
+			&r.RequestID,
+			&r.TransactionID,
+			&r.IpayID,
+			&r.OutletID,
 		); err != nil {
-			return err
+			return nil, err
 		}
+		res = append(res, r)
 	}
 
-	return tx.Commit()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 const upiAtmSelectBase = `

@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/levionstudio/fintech/internal/models"
@@ -60,6 +62,12 @@ func (ua *UPIATMHandler) HandleCreateUPIQR(w http.ResponseWriter, r *http.Reques
 
 	if details.EKYCStatus != "APPROVED" {
 		utils.BadRequest(w, ua.logger, "create upi qr", errors.New("upi atm merchant ekyc is not approved"))
+		return
+	}
+
+	// The amount is debited from the wallet when the payment succeeds.
+	if err := ua.upiAtmStore.ValidateRetailerForQR(retailerId, req.Amount); err != nil {
+		utils.BadRequest(w, ua.logger, "create upi qr", err)
 		return
 	}
 
@@ -151,6 +159,10 @@ func (ua *UPIATMHandler) HandleCheckQRTransactionStatus(w http.ResponseWriter, r
 	apiRes.RequestID = apiReq.RequestID
 
 	if err := ua.upiAtmStore.FinilizeQRStatus(apiRes); err != nil {
+		if errors.Is(err, store.ErrUPIATMDebitFailed) {
+			utils.BadRequest(w, ua.logger, "check upi qr status", err)
+			return
+		}
 		utils.ServerError(w, ua.logger, "check upi qr status", err)
 		return
 	}
@@ -187,6 +199,51 @@ func checkQRTransactionStatus(req *models.UPIATMCheckQRTransactionStatusAPIReque
 	}
 
 	return &res, nil
+}
+
+// StartQRStatusPoller checks and updates every non-final UPI ATM QR at the given
+// interval until ctx is cancelled. Runs never overlap: a slow run simply delays
+// the next tick.
+func (ua *UPIATMHandler) StartQRStatusPoller(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	ua.logger.Info("upi atm qr status poller started", "interval", interval.String())
+	for {
+		select {
+		case <-ctx.Done():
+			ua.logger.Info("upi atm qr status poller stopped")
+			return
+		case <-ticker.C:
+			ua.pollPendingQRs(ctx)
+		}
+	}
+}
+
+func (ua *UPIATMHandler) pollPendingQRs(ctx context.Context) {
+	pending, err := ua.upiAtmStore.GetPendingQRsForStatusCheck(200)
+	if err != nil {
+		ua.logger.Error("upi atm poller: fetch pending qrs", "error", err)
+		return
+	}
+
+	for i := range pending {
+		if ctx.Err() != nil {
+			return
+		}
+
+		qr := &pending[i]
+		apiRes, err := checkQRTransactionStatus(qr)
+		if err != nil {
+			ua.logger.Warn("upi atm poller: status check", "request_id", qr.RequestID, "error", err)
+			continue
+		}
+
+		apiRes.RequestID = qr.RequestID
+		if err := ua.upiAtmStore.FinilizeQRStatus(apiRes); err != nil {
+			ua.logger.Error("upi atm poller: finalize status", "request_id", qr.RequestID, "error", err)
+		}
+	}
 }
 
 func (ua *UPIATMHandler) HandleGetUPIATMTransactionsByRetailerID(w http.ResponseWriter, r *http.Request) {

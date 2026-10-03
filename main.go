@@ -31,6 +31,10 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 	}
 
+	pollerCtx, stopPoller := context.WithCancel(context.Background())
+	defer stopPoller()
+	go app.UPIATMHandler.StartQRStatusPoller(pollerCtx, 15*time.Second)
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
@@ -49,6 +53,7 @@ func main() {
 		}
 	case sig := <-quit:
 		app.Logger.Info("server shutting down", "signal", sig)
+		stopPoller()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
 		defer cancel()
