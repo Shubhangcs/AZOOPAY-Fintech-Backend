@@ -43,6 +43,7 @@ type GetCreditCardBeneficiaryDetailsResponseModel struct {
 type CreateCreditCardPaymentTransactionRequestModel struct {
 	BeneDetails      *GetCreditCardBeneficiaryDetailsResponseModel
 	Amount           float64 `json:"amount"`
+	Mpin             int     `json:"mpin"`
 	PartnerRequestID string  `json:"partner_request_id"`
 }
 

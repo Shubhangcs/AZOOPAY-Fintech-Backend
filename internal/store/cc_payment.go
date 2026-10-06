@@ -225,6 +225,10 @@ func (cc *PostgresCreditCardPaymentStore) GetBeneficiaryByBeneficiaryID(benefici
 }
 
 func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransaction(data *models.CreateCreditCardPaymentTransactionRequestModel) (int64, error) {
+	if err := verifyMpin(cc.db, data.BeneDetails.RetailerID, data.Mpin); err != nil {
+		return 0, err
+	}
+
 	rc, err := getRetailerDetails(cc.db, data.BeneDetails.RetailerID)
 	if err != nil {
 		return 0, err

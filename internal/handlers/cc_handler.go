@@ -206,7 +206,8 @@ func isCCClientErr(err error) bool {
 		msg == "insufficient balance" ||
 		msg == "cc transaction not found" ||
 		msg == "cc transaction not found or already refunded" ||
-		msg == "only FAILED cc transactions can be refunded"
+		msg == "only FAILED cc transactions can be refunded" ||
+		msg == "invalid mpin"
 }
 
 func (ch *CCHandler) HandleGetCreditCardPaymentTransactionByID(w http.ResponseWriter, r *http.Request) {
