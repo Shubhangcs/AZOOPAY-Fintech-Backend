@@ -1,3 +1,4 @@
 .env
 .claude
 fintech.postman_collection.json
+*.pdf

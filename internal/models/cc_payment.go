@@ -70,7 +70,31 @@ type CreditCardBillPaymentAPIResponse struct {
 	Error                 int    `json:"error"`
 	Message               string `json:"msg"`
 	Status                int    `json:"status"`
-	OrderID               string `json:"order_id"`
+	OrderID               string `json:"orderid"`
 	OperatorTransactionID string `json:"optransid"`
 	PartnerRequestID      string `json:"partnerreqid"`
+}
+
+type CreditCardPaymentTransactionModel struct {
+	TransactionID         int64     `json:"transaction_id"`
+	RetailerID            string    `json:"retailer_id"`
+	RetailerName          string    `json:"retailer_name"`
+	RetailerBusinessName  *string   `json:"retailer_business_name,omitempty"`
+	BeneficiaryID         int64     `json:"beneficiary_id"`
+	BeneficiaryName       string    `json:"beneficiary_name"`
+	PhoneNumber           string    `json:"phone_number"`
+	AccountNumber         string    `json:"account_number"`
+	IFSCCode              string    `json:"ifsc_code"`
+	BankName              string    `json:"bank_name"`
+	OperatorName          string    `json:"operator_name"`
+	OperatorCode          string    `json:"operator_code"`
+	Amount                float64   `json:"amount"`
+	Status                string    `json:"status"`
+	PartnerRequestID      string    `json:"partner_request_id"`
+	OrderID               string    `json:"order_id"`
+	OperatorTransactionID string    `json:"operator_transaction_id"`
+	BeforeBalance         float64   `json:"before_balance"`
+	AfterBalance          float64   `json:"after_balance"`
+	CreatedAT             time.Time `json:"created_at"`
+	UpdatedAT             time.Time `json:"updated_at"`
 }

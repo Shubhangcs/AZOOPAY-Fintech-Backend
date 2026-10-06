@@ -2,9 +2,11 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/levionstudio/fintech/internal/models"
+	"github.com/levionstudio/fintech/internal/utils"
 )
 
 type CreditCardPaymentStore interface {
@@ -18,6 +20,12 @@ type CreditCardPaymentStore interface {
 		transactionID int64,
 		res *models.CreditCardBillPaymentAPIResponse,
 	) error
+	GetCreditCardPaymentTransactionByID(transactionID int64) (*models.CreditCardPaymentTransactionModel, error)
+	GetAllCreditCardPaymentTransactions(p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error)
+	GetCreditCardPaymentTransactionsByRetailerID(retailerID string, p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error)
+	GetCreditCardPaymentTransactionsByDistributorID(distributorID string, p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error)
+	GetCreditCardPaymentTransactionsByMasterDistributorID(mdID string, p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error)
+	RefundCreditCardPaymentTransaction(transactionID int64) error
 }
 
 type PostgresCreditCardPaymentStore struct {
@@ -217,6 +225,20 @@ func (cc *PostgresCreditCardPaymentStore) GetBeneficiaryByBeneficiaryID(benefici
 }
 
 func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransaction(data *models.CreateCreditCardPaymentTransactionRequestModel) (int64, error) {
+	rc, err := getRetailerDetails(cc.db, data.BeneDetails.RetailerID)
+	if err != nil {
+		return 0, err
+	}
+	if !rc.kyc {
+		return 0, errors.New("retailer KYC is not verified")
+	}
+	if rc.blocked {
+		return 0, errors.New("retailer is blocked")
+	}
+	if rc.balance < data.Amount {
+		return 0, errors.New("insufficient wallet balance")
+	}
+
 	tx, err := cc.db.Begin()
 	if err != nil {
 		return 0, err
@@ -260,6 +282,9 @@ func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransa
 		Remarks:       fmt.Sprintf("Credit Card Bill Payment By Retailer: %s For Beneficiary: %s", data.BeneDetails.RetailerID, data.BeneDetails.BeneficiaryName),
 		userTableInfo: *userTableInfo,
 	}, cc.wts); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, checkExistsTx(tx, userTableInfo.TableName, userTableInfo.IDColumnName, data.BeneDetails.RetailerID, "retailer")
+		}
 		return 0, err
 	}
 
@@ -324,4 +349,190 @@ func (cc *PostgresCreditCardPaymentStore) FinalizeCreateCreditCardPaymentTransac
 	}
 
 	return checkRowsAffected(dbres)
+}
+
+const ccPaymentSelectBase = `
+SELECT
+	t.transaction_id,
+	t.retailer_id,
+	COALESCE(r.retailer_name, '') AS retailer_name,
+	r.retailer_business_name,
+	t.beneficiary_id,
+	b.beneficiary_name,
+	b.beneficiary_phone,
+	b.beneficiary_account_number,
+	b.beneficiary_ifsc_code,
+	b.beneficiary_bank_name,
+	b.operator_name,
+	b.operator_code,
+	t.amount,
+	t.status,
+	t.partner_request_id,
+	t.order_id,
+	t.operator_transaction_id,
+	COALESCE(wt.before_balance, 0) AS before_balance,
+	COALESCE(wt.after_balance, 0) AS after_balance,
+	t.created_at,
+	t.updated_at
+FROM credit_card_payment_transactions t
+JOIN retailers r ON r.retailer_id = t.retailer_id
+JOIN credit_card_beneficiaries b ON b.beneficiary_id = t.beneficiary_id
+LEFT JOIN wallet_transactions wt ON wt.reference_id = t.transaction_id::TEXT
+	AND wt.user_id = t.retailer_id AND wt.debit_amount IS NOT NULL
+	AND wt.transaction_reason = 'CC_BILL_PAYMENT'
+`
+
+const ccPaymentFilters = `
+	AND t.created_at >= COALESCE($4, '-infinity'::TIMESTAMPTZ)
+	AND t.created_at <= COALESCE($5, 'infinity'::TIMESTAMPTZ)
+	AND ($6::TEXT IS NULL OR t.status = $6)
+	AND ($7::TEXT IS NULL OR (
+		t.transaction_id::TEXT ILIKE '%'||$7||'%' OR
+		t.partner_request_id ILIKE '%'||$7||'%' OR
+		t.order_id ILIKE '%'||$7||'%' OR
+		t.operator_transaction_id ILIKE '%'||$7||'%' OR
+		b.beneficiary_name ILIKE '%'||$7||'%' OR
+		b.beneficiary_phone ILIKE '%'||$7||'%'
+	))
+	ORDER BY t.created_at DESC
+	LIMIT $2 OFFSET $3;
+`
+
+func (cc *PostgresCreditCardPaymentStore) GetCreditCardPaymentTransactionByID(transactionID int64) (*models.CreditCardPaymentTransactionModel, error) {
+	q := ccPaymentSelectBase + `WHERE t.transaction_id = $1;`
+	results, err := scanCreditCardPaymentTransactions(cc.db, q, transactionID)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, errors.New("cc transaction not found")
+	}
+	return &results[0], nil
+}
+
+func (cc *PostgresCreditCardPaymentStore) GetAllCreditCardPaymentTransactions(p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error) {
+	// $1 is a no-op placeholder so every list query shares the same filter numbering.
+	q := ccPaymentSelectBase + `WHERE ($1::TEXT IS NULL OR TRUE)` + ccPaymentFilters
+	return scanCreditCardPaymentTransactions(cc.db, q, nil, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search)
+}
+
+func (cc *PostgresCreditCardPaymentStore) GetCreditCardPaymentTransactionsByRetailerID(retailerID string, p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error) {
+	q := ccPaymentSelectBase + `WHERE t.retailer_id = $1` + ccPaymentFilters
+	return scanCreditCardPaymentTransactions(cc.db, q, retailerID, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search)
+}
+
+func (cc *PostgresCreditCardPaymentStore) GetCreditCardPaymentTransactionsByDistributorID(distributorID string, p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error) {
+	q := ccPaymentSelectBase + `WHERE r.distributor_id = $1` + ccPaymentFilters
+	return scanCreditCardPaymentTransactions(cc.db, q, distributorID, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search)
+}
+
+func (cc *PostgresCreditCardPaymentStore) GetCreditCardPaymentTransactionsByMasterDistributorID(mdID string, p utils.QueryParams) ([]models.CreditCardPaymentTransactionModel, error) {
+	q := ccPaymentSelectBase + `
+	JOIN distributors d ON d.distributor_id = r.distributor_id
+	WHERE d.master_distributor_id = $1` + ccPaymentFilters
+	return scanCreditCardPaymentTransactions(cc.db, q, mdID, p.Limit, p.Offset, p.StartDate, p.EndDate, p.Status, p.Search)
+}
+
+func scanCreditCardPaymentTransactions(db *sql.DB, q string, args ...any) ([]models.CreditCardPaymentTransactionModel, error) {
+	rows, err := db.Query(q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.CreditCardPaymentTransactionModel
+	for rows.Next() {
+		var t models.CreditCardPaymentTransactionModel
+		if err := rows.Scan(
+			&t.TransactionID,
+			&t.RetailerID,
+			&t.RetailerName,
+			&t.RetailerBusinessName,
+			&t.BeneficiaryID,
+			&t.BeneficiaryName,
+			&t.PhoneNumber,
+			&t.AccountNumber,
+			&t.IFSCCode,
+			&t.BankName,
+			&t.OperatorName,
+			&t.OperatorCode,
+			&t.Amount,
+			&t.Status,
+			&t.PartnerRequestID,
+			&t.OrderID,
+			&t.OperatorTransactionID,
+			&t.BeforeBalance,
+			&t.AfterBalance,
+			&t.CreatedAT,
+			&t.UpdatedAT,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, t)
+	}
+	return results, rows.Err()
+}
+
+// RefundCreditCardPaymentTransaction refunds a FAILED payment to the retailer's
+// refund_wallet (same as DTH / mobile recharge / electricity refunds) and marks
+// it REFUNDED. The status guard prevents a double refund.
+func (cc *PostgresCreditCardPaymentStore) RefundCreditCardPaymentTransaction(transactionID int64) error {
+	t, err := cc.GetCreditCardPaymentTransactionByID(transactionID)
+	if err != nil {
+		return err
+	}
+	if t.Status != "FAILED" {
+		return errors.New("only FAILED cc transactions can be refunded")
+	}
+
+	tx, err := cc.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec(`
+		UPDATE credit_card_payment_transactions
+		SET status = 'REFUNDED',
+			updated_at = NOW()
+		WHERE transaction_id = $1 AND status = 'FAILED'
+	`, transactionID)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errors.New("cc transaction not found or already refunded")
+	}
+
+	refID := fmt.Sprintf("%d", transactionID)
+	remarks := fmt.Sprintf("Credit Card Bill Payment refund | Ref: %s", refID)
+
+	var refundAfterBalance float64
+	if err := tx.QueryRow(`
+		UPDATE retailers
+		SET refund_wallet = refund_wallet + $1,
+			updated_at = NOW()
+		WHERE retailer_id = $2
+		RETURNING refund_wallet;
+	`, t.Amount, t.RetailerID).Scan(&refundAfterBalance); err != nil {
+		return err
+	}
+
+	if err := cc.wts.CreateWalletTransactionTx(tx, &models.WalletTransactionModel{
+		UserID:            t.RetailerID,
+		ReferenceID:       refID,
+		CreditAmount:      &t.Amount,
+		BeforeBalance:     refundAfterBalance - t.Amount,
+		AfterBalance:      refundAfterBalance,
+		TransactionReason: "CC_BILL_PAYMENT_REFUND",
+		Remarks:           remarks,
+	}); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

@@ -133,10 +133,31 @@ func (uh *UPIATMOnboardingHandler) HandleBiometricKYC(w http.ResponseWriter, r *
 		return
 	}
 
-	if details.ReferenceKey == "" {
-		utils.BadRequest(w, uh.logger, "upi atm biometric kyc", errors.New("reference key not found, check ekyc status first"))
+	// The referenceKey expires quickly, so a fresh one is fetched from the eKYC
+	// status API right before every biometric submission instead of reusing the
+	// one stored by an earlier status check. gw must match the status check.
+	gw := r.URL.Query().Get("gw")
+	if gw == "" {
+		gw = "AC"
+	}
+
+	ekycRes, err := upiAtmCheckMerchantEKYC(details.SubMerchantID, gw)
+	if err != nil {
+		utils.BadRequest(w, uh.logger, "upi atm biometric kyc", err)
 		return
 	}
+
+	if err := uh.UPIATMOnboardingStore.UpdateUPIATMMerchant(retailerId, ekycRes); err != nil {
+		utils.ServerError(w, uh.logger, "upi atm biometric kyc", err)
+		return
+	}
+
+	if ekycRes.EKYCAction != "ACTION-REQUIRED" || ekycRes.ReferenceKey == "" {
+		utils.BadRequest(w, uh.logger, "upi atm biometric kyc", errors.New("biometric kyc is not required, ekyc status: "+ekycRes.EKYCStatus))
+		return
+	}
+
+	details.ReferenceKey = ekycRes.ReferenceKey
 
 	res, err := upiAtmBiometricKYC(&req, details)
 	if err != nil {

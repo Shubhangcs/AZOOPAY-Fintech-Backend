@@ -122,6 +122,10 @@ func (ch *CCHandler) HandleCreditCardPayment(w http.ResponseWriter, r *http.Requ
 
 	transactionId, err := ch.ccstore.InitilizeCreateCreditCardPaymentTransaction(&req)
 	if err != nil {
+		if isCCClientErr(err) {
+			utils.BadRequest(w, ch.logger, "credit card payment", err)
+			return
+		}
 		utils.ServerError(w, ch.logger, "credit card payment", err)
 		return
 	}
@@ -191,4 +195,118 @@ func (ch *CCHandler) HandleGetCreditCardBeneficiariesByRetailerID(w http.Respons
 	}
 
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "beneficiaries fetched successfully", "beneficiaries": bene})
+}
+
+func isCCClientErr(err error) bool {
+	msg := err.Error()
+	return msg == "retailer not found" ||
+		msg == "retailer KYC is not verified" ||
+		msg == "retailer is blocked" ||
+		msg == "insufficient wallet balance" ||
+		msg == "insufficient balance" ||
+		msg == "cc transaction not found" ||
+		msg == "cc transaction not found or already refunded" ||
+		msg == "only FAILED cc transactions can be refunded"
+}
+
+func (ch *CCHandler) HandleGetCreditCardPaymentTransactionByID(w http.ResponseWriter, r *http.Request) {
+	transactionId, err := utils.ReadParamIDInt(r)
+	if err != nil {
+		utils.BadRequest(w, ch.logger, "get cc transaction", err)
+		return
+	}
+
+	res, err := ch.ccstore.GetCreditCardPaymentTransactionByID(transactionId)
+	if err != nil {
+		if isCCClientErr(err) {
+			utils.BadRequest(w, ch.logger, "get cc transaction", err)
+			return
+		}
+		utils.ServerError(w, ch.logger, "get cc transaction", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc transaction fetched successfully", "transaction": res})
+}
+
+func (ch *CCHandler) HandleGetAllCreditCardPaymentTransactions(w http.ResponseWriter, r *http.Request) {
+	p := utils.ReadQueryParams(r)
+
+	res, err := ch.ccstore.GetAllCreditCardPaymentTransactions(p)
+	if err != nil {
+		utils.ServerError(w, ch.logger, "get all cc transactions", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc transactions fetched successfully", "transactions": res})
+}
+
+func (ch *CCHandler) HandleGetCreditCardPaymentTransactionsByRetailerID(w http.ResponseWriter, r *http.Request) {
+	retailerId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ch.logger, "get cc transactions by retailer id", err)
+		return
+	}
+	p := utils.ReadQueryParams(r)
+
+	res, err := ch.ccstore.GetCreditCardPaymentTransactionsByRetailerID(retailerId, p)
+	if err != nil {
+		utils.ServerError(w, ch.logger, "get cc transactions by retailer id", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc transactions fetched successfully", "transactions": res})
+}
+
+func (ch *CCHandler) HandleGetCreditCardPaymentTransactionsByDistributorID(w http.ResponseWriter, r *http.Request) {
+	distributorId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ch.logger, "get cc transactions by distributor id", err)
+		return
+	}
+	p := utils.ReadQueryParams(r)
+
+	res, err := ch.ccstore.GetCreditCardPaymentTransactionsByDistributorID(distributorId, p)
+	if err != nil {
+		utils.ServerError(w, ch.logger, "get cc transactions by distributor id", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc transactions fetched successfully", "transactions": res})
+}
+
+func (ch *CCHandler) HandleGetCreditCardPaymentTransactionsByMasterDistributorID(w http.ResponseWriter, r *http.Request) {
+	mdId, err := utils.ReadParamID(r)
+	if err != nil {
+		utils.BadRequest(w, ch.logger, "get cc transactions by md id", err)
+		return
+	}
+	p := utils.ReadQueryParams(r)
+
+	res, err := ch.ccstore.GetCreditCardPaymentTransactionsByMasterDistributorID(mdId, p)
+	if err != nil {
+		utils.ServerError(w, ch.logger, "get cc transactions by md id", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc transactions fetched successfully", "transactions": res})
+}
+
+func (ch *CCHandler) HandleRefundCreditCardPaymentTransaction(w http.ResponseWriter, r *http.Request) {
+	transactionId, err := utils.ReadParamIDInt(r)
+	if err != nil {
+		utils.BadRequest(w, ch.logger, "refund cc transaction", err)
+		return
+	}
+
+	if err := ch.ccstore.RefundCreditCardPaymentTransaction(transactionId); err != nil {
+		if isCCClientErr(err) {
+			utils.BadRequest(w, ch.logger, "refund cc transaction", err)
+			return
+		}
+		utils.ServerError(w, ch.logger, "refund cc transaction", err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc transaction refunded successfully"})
 }

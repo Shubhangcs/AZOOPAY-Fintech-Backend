@@ -471,6 +471,13 @@ func ccBillRoutes(router *chi.Mux, app *app.Application) {
 		r.Put("/update", app.CCHandler.HandleUpdateCCBeneficiary)
 		r.Delete("/delete/{id}", app.CCHandler.HandleDeleteCCBeneficiary)
 		r.Post("/create/transaction/{id}", app.CCHandler.HandleCreditCardPayment)
+
+		r.Get("/transaction/{id}", app.CCHandler.HandleGetCreditCardPaymentTransactionByID)
+		r.Post("/transaction/refund/{id}", app.CCHandler.HandleRefundCreditCardPaymentTransaction)
+		r.Get("/transactions", app.CCHandler.HandleGetAllCreditCardPaymentTransactions)
+		r.Get("/transactions/retailer/{id}", app.CCHandler.HandleGetCreditCardPaymentTransactionsByRetailerID)
+		r.Get("/transactions/distributor/{id}", app.CCHandler.HandleGetCreditCardPaymentTransactionsByDistributorID)
+		r.Get("/transactions/md/{id}", app.CCHandler.HandleGetCreditCardPaymentTransactionsByMasterDistributorID)
 	})
 }
 
