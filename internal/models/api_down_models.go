@@ -15,4 +15,7 @@ const (
 	ServiceDTHRecharge     = "dth_recharge"
 	ServiceElectricityBill = "electricity_bill"
 	ServiceAEPS            = "aeps"
+	ServicePayoutDevsidh   = "payout_devsidh"
+	ServiceCCBill          = "cc_bill"
+	ServiceUPIATM          = "upi_atm"
 )

@@ -107,9 +107,9 @@ func NewApplication() (*Application, error) {
 	dashboardHandler := handlers.NewDashboardHandler(dashboardStore, logger)
 	aepsOnboardingHandler := handlers.NewAEPSOnboardingHandler(logger, aepsOnboardingStore)
 	aepsHandler := handlers.NewAEPSHandler(aepsStore, logger, apiDownStore)
-	ccHandler := handlers.NewCCHandler(logger, ccBillStore)
+	ccHandler := handlers.NewCCHandler(logger, ccBillStore, apiDownStore)
 	upiAtmOnboardingHandler := handlers.NewUPIATMOnboardingHandler(logger, upiAtmOnboardingStore)
-	upiAtmHandler := handlers.NewUPIATMHandler(logger, upiAtmStore)
+	upiAtmHandler := handlers.NewUPIATMHandler(logger, upiAtmStore, apiDownStore)
 
 	return &Application{
 		Logger:                   logger,

@@ -14,14 +14,16 @@ import (
 )
 
 type CCHandler struct {
-	logger  *slog.Logger
-	ccstore store.CreditCardPaymentStore
+	logger       *slog.Logger
+	ccstore      store.CreditCardPaymentStore
+	apiDownStore store.ApiDownStore
 }
 
-func NewCCHandler(logger *slog.Logger, ccstore store.CreditCardPaymentStore) *CCHandler {
+func NewCCHandler(logger *slog.Logger, ccstore store.CreditCardPaymentStore, apiDownStore store.ApiDownStore) *CCHandler {
 	return &CCHandler{
 		logger,
 		ccstore,
+		apiDownStore,
 	}
 }
 
@@ -100,6 +102,14 @@ func (ch *CCHandler) HandleDeleteCCBeneficiary(w http.ResponseWriter, r *http.Re
 }
 
 func (ch *CCHandler) HandleCreditCardPayment(w http.ResponseWriter, r *http.Request) {
+	if down, err := ch.apiDownStore.IsServiceDown(models.ServiceCCBill); err != nil {
+		utils.ServerError(w, ch.logger, "credit card payment", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ch.logger, "credit card payment", errors.New("credit card bill payment service is currently unavailable"))
+		return
+	}
+
 	beneId, err := utils.ReadParamIDInt(r)
 	if err != nil {
 		utils.BadRequest(w, ch.logger, "credit card payment", err)

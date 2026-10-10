@@ -15,18 +15,28 @@ import (
 )
 
 type UPIATMHandler struct {
-	upiAtmStore store.UPIATMStore
-	logger      *slog.Logger
+	upiAtmStore  store.UPIATMStore
+	apiDownStore store.ApiDownStore
+	logger       *slog.Logger
 }
 
-func NewUPIATMHandler(logger *slog.Logger, upiAtmStore store.UPIATMStore) *UPIATMHandler {
+func NewUPIATMHandler(logger *slog.Logger, upiAtmStore store.UPIATMStore, apiDownStore store.ApiDownStore) *UPIATMHandler {
 	return &UPIATMHandler{
 		upiAtmStore,
+		apiDownStore,
 		logger,
 	}
 }
 
 func (ua *UPIATMHandler) HandleCreateUPIQR(w http.ResponseWriter, r *http.Request) {
+	if down, err := ua.apiDownStore.IsServiceDown(models.ServiceUPIATM); err != nil {
+		utils.ServerError(w, ua.logger, "create upi qr", err)
+		return
+	} else if down {
+		utils.BadRequest(w, ua.logger, "create upi qr", errors.New("upi atm service is currently unavailable"))
+		return
+	}
+
 	retailerId, err := utils.ReadParamID(r)
 	if err != nil {
 		utils.BadRequest(w, ua.logger, "create upi qr", err)
