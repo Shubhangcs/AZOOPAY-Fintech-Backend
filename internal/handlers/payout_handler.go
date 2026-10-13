@@ -652,7 +652,7 @@ func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 }
 
 func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r *http.Request) {
-	res, err := callFinzengBalanceAPI()
+	res, err := callFinzengBalanceAPI(ah.logger)
 	if err != nil {
 		utils.ServerError(w, ah.logger, "get vendor payment balance", err)
 		return

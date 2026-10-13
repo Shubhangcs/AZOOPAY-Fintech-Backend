@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"mime/multipart"
 	"net/http"
@@ -41,6 +42,11 @@ func setFinzengHeaders(req *http.Request) {
 	req.Header.Set("client-secret", utils.FinzengClientSecret)
 	req.Header.Set("service-secret", utils.FinzengServiceSecret)
 	req.Header.Set("accept", "application/json")
+}
+
+// readFinzengBody reads the raw reply so it can be logged before decoding.
+func readFinzengBody(res *http.Response) ([]byte, error) {
+	return io.ReadAll(io.LimitReader(res.Body, 1<<20))
 }
 
 // finzengCode trims the responseCode; FinZenG has sent values like " S00000P".
@@ -102,6 +108,9 @@ func callFinzengPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 	setFinzengHeaders(req)
 	req.Header.Set("content-type", "application/json")
 
+	// Debug: request body (auth headers are not logged).
+	logger.Info("finzeng payout request", "url", req.URL.String(), "body", string(b), "payout_transaction_id", pt.PayoutTransactionID)
+
 	httpRes, err := finzengHTTPClient.Do(req)
 	if err != nil {
 		logger.Error("finzeng payout api call failed", "error", err, "payout_transaction_id", pt.PayoutTransactionID)
@@ -109,8 +118,15 @@ func callFinzengPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 	}
 	defer httpRes.Body.Close()
 
+	raw, err := readFinzengBody(httpRes)
+	if err != nil {
+		logger.Error("finzeng payout read failed", "error", err, "http_status", httpRes.StatusCode, "payout_transaction_id", pt.PayoutTransactionID)
+		return nil, "PENDING", "", ""
+	}
+	logger.Info("finzeng payout response", "http_status", httpRes.StatusCode, "body", string(raw), "payout_transaction_id", pt.PayoutTransactionID)
+
 	var apiResp models.FinzengPayoutAPIResponseModel
-	if err := json.NewDecoder(httpRes.Body).Decode(&apiResp); err != nil {
+	if err := json.Unmarshal(raw, &apiResp); err != nil {
 		logger.Error("finzeng payout decode failed", "error", err, "http_status", httpRes.StatusCode, "payout_transaction_id", pt.PayoutTransactionID)
 		return nil, "PENDING", "", ""
 	}
@@ -158,11 +174,17 @@ func callFinzengPayoutStatusAPI(logger *slog.Logger, pt *models.PayoutTransactio
 		return
 	}
 
+	fields := map[string]string{
+		"sanTxnId": pt.OrderID,
+		"cTxnId":   pt.PartnerRequestID,
+		"txnDate":  pt.CreatedAT.In(istLocation).Format("2006-01-02"),
+	}
+
 	var form bytes.Buffer
 	mw := multipart.NewWriter(&form)
-	_ = mw.WriteField("sanTxnId", pt.OrderID)
-	_ = mw.WriteField("cTxnId", pt.PartnerRequestID)
-	_ = mw.WriteField("txnDate", pt.CreatedAT.In(istLocation).Format("2006-01-02"))
+	_ = mw.WriteField("sanTxnId", fields["sanTxnId"])
+	_ = mw.WriteField("cTxnId", fields["cTxnId"])
+	_ = mw.WriteField("txnDate", fields["txnDate"])
 	if err := mw.Close(); err != nil {
 		logger.Error("finzeng status form build failed", "error", err, "payout_transaction_id", pt.PayoutTransactionID)
 		return
@@ -176,6 +198,9 @@ func callFinzengPayoutStatusAPI(logger *slog.Logger, pt *models.PayoutTransactio
 	setFinzengHeaders(req)
 	req.Header.Set("content-type", mw.FormDataContentType())
 
+	// Debug: request form fields (auth headers are not logged).
+	logger.Info("finzeng status request", "url", req.URL.String(), "form", fields, "payout_transaction_id", pt.PayoutTransactionID)
+
 	httpRes, err := finzengHTTPClient.Do(req)
 	if err != nil {
 		logger.Error("finzeng status api call failed", "error", err, "payout_transaction_id", pt.PayoutTransactionID)
@@ -183,8 +208,15 @@ func callFinzengPayoutStatusAPI(logger *slog.Logger, pt *models.PayoutTransactio
 	}
 	defer httpRes.Body.Close()
 
+	raw, err := readFinzengBody(httpRes)
+	if err != nil {
+		logger.Error("finzeng status read failed", "error", err, "http_status", httpRes.StatusCode, "payout_transaction_id", pt.PayoutTransactionID)
+		return
+	}
+	logger.Info("finzeng status response", "http_status", httpRes.StatusCode, "body", string(raw), "payout_transaction_id", pt.PayoutTransactionID)
+
 	var apiResp models.FinzengPayoutAPIResponseModel
-	if err := json.NewDecoder(httpRes.Body).Decode(&apiResp); err != nil {
+	if err := json.Unmarshal(raw, &apiResp); err != nil {
 		logger.Error("finzeng status decode failed", "error", err, "http_status", httpRes.StatusCode, "payout_transaction_id", pt.PayoutTransactionID)
 		return
 	}
@@ -211,7 +243,7 @@ func callFinzengPayoutStatusAPI(logger *slog.Logger, pt *models.PayoutTransactio
 	return
 }
 
-func callFinzengBalanceAPI() (*models.FinzengBalanceAPIResponseModel, error) {
+func callFinzengBalanceAPI(logger *slog.Logger) (*models.FinzengBalanceAPIResponseModel, error) {
 	if !finzengConfigured() {
 		return nil, fmt.Errorf("finzeng payout api not configured")
 	}
@@ -223,14 +255,22 @@ func callFinzengBalanceAPI() (*models.FinzengBalanceAPIResponseModel, error) {
 	setFinzengHeaders(req)
 	req.Header.Set("content-type", "application/json")
 
+	logger.Info("finzeng balance request", "url", req.URL.String())
+
 	httpRes, err := finzengHTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer httpRes.Body.Close()
 
+	raw, err := readFinzengBody(httpRes)
+	if err != nil {
+		return nil, fmt.Errorf("finzeng balance read (status %d): %w", httpRes.StatusCode, err)
+	}
+	logger.Info("finzeng balance response", "http_status", httpRes.StatusCode, "body", string(raw))
+
 	var res models.FinzengBalanceAPIResponseModel
-	if err := json.NewDecoder(httpRes.Body).Decode(&res); err != nil {
+	if err := json.Unmarshal(raw, &res); err != nil {
 		return nil, fmt.Errorf("finzeng balance decode (status %d): %w", httpRes.StatusCode, err)
 	}
 	return &res, nil
