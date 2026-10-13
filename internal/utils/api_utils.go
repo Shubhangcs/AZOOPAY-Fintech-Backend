@@ -25,6 +25,12 @@ var (
 	BoompayClientID      = os.Getenv("BOOMPAY_CLIENT_ID")
 	BoompayAPIToken      = os.Getenv("BOOMPAY_API_TOKEN")
 	BoompayAPISecret     = os.Getenv("BOOMPAY_API_SECRET")
+	FinzengAPI           = os.Getenv("FINZENG_API")
+	FinzengClientID      = os.Getenv("FINZENG_CLIENT_ID")
+	FinzengAPIKey        = os.Getenv("FINZENG_API_KEY")
+	FinzengClientSecret  = os.Getenv("FINZENG_CLIENT_SECRET")
+	FinzengServiceSecret = os.Getenv("FINZENG_SERVICE_SECRET")
+	FinzengFromAccount   = os.Getenv("FINZENG_FROM_ACCOUNT")
 )
 
 const (
@@ -69,6 +75,9 @@ const (
 	BoompayPayoutStatusCheck           = "/payout/w/ur/initiated-payout-status"
 	BoompayPayoutAccessTokenGeneration = "/auth/generate-token"
 	BoompayPennyDrop                   = "/bank/verification-penny-drop"
+	FinzengPayoutInitiate              = "/initiate"
+	FinzengPayoutStatus                = "/status"
+	FinzengBalance                     = "/balance"
 )
 
 var apiHTTPClient = &http.Client{Timeout: 70 * time.Second}

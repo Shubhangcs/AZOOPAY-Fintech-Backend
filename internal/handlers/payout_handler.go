@@ -543,12 +543,6 @@ func (ph *PayoutHandler) HandleCreateDevsidhPayoutTransaction(w http.ResponseWri
 		return
 	}
 
-	res, err := generateToken()
-	if err != nil {
-		utils.BadRequest(w, ph.logger, "4 create payout transaction", err)
-		return
-	}
-
 	req.APIProvider = "DVSID"
 	if err := ph.payoutStore.InitializePayoutTransaction(&req); err != nil {
 		if isPayoutClientErr(err) {
@@ -559,8 +553,8 @@ func (ph *PayoutHandler) HandleCreateDevsidhPayoutTransaction(w http.ResponseWri
 		return
 	}
 
-	// Hit the external payout API and auto-finalize based on the response.
-	apiResp, finalStatus, orderID, operatorTxnID := callDevsidhPayoutAPI(ph.logger, &req, res.Token)
+	// Vendor Payment is served by FinZenG; finalize based on the response.
+	apiResp, finalStatus, orderID, operatorTxnID := callFinzengPayoutAPI(ph.logger, &req)
 
 	if err := ph.payoutStore.FinalizePayout(req.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
 		utils.ServerError(w, ph.logger, "finalize payout transaction", err)
@@ -658,35 +652,22 @@ func callDevsidhPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 }
 
 func (ah *PayoutHandler) HandleGetDevsidhWalletBalance(w http.ResponseWriter, r *http.Request) {
-	if utils.DevsidhAPI == "" || utils.DevsidhAPIPassword == "" || utils.DevsidhAPIToken == "" || utils.DevsidhAPIUsername == "" || utils.DevsidhPayout == "" {
-		ah.logger.Error("cred error")
-		return
-	}
-
-	res, err := generateToken()
+	res, err := callFinzengBalanceAPI()
 	if err != nil {
-		utils.BadRequest(w, ah.logger, "create payout transaction", err)
+		utils.ServerError(w, ah.logger, "get vendor payment balance", err)
 		return
 	}
 
-	var resp struct {
-		Success          bool    `json:"success"`
-		AvailableBalance float64 `json:"availableBalance"`
-		Message          string  `json:"message"`
-	}
-	if err := utils.PostRequest4(
-		utils.DevsidhAPI+utils.DevsidhGetBalance,
-		"UserId", utils.DevsidhAPIUsername,
-		"Password", utils.DevsidhAPIPassword,
-		"Token", utils.DevsidhAPIToken,
-		"Authorization", "Bearer "+res.Token,
-		map[string]any{},
-		&resp,
-	); err != nil {
-		utils.ServerError(w, ah.logger, "get payntric balance", err)
-		return
-	}
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": resp.Message, "balance": resp})
+	// Same shape as before ({ success, availableBalance, message }) plus the
+	// other FinZenG balance fields.
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": res.Message, "balance": map[string]any{
+		"success":          strings.EqualFold(res.Status, "SUCCESS"),
+		"availableBalance": res.Data.AvailableBalance,
+		"blockedBalance":   res.Data.BlockedBalance,
+		"creditedBalance":  res.Data.CreditedBalance,
+		"debitedBalance":   res.Data.DebitedBalance,
+		"message":          res.Message,
+	}})
 }
 
 func (ph *PayoutHandler) HandleCheckDevsidhPayoutStatus(w http.ResponseWriter, r *http.Request) {
@@ -706,22 +687,17 @@ func (ph *PayoutHandler) HandleCheckDevsidhPayoutStatus(w http.ResponseWriter, r
 		return
 	}
 
-	// If already finalized, return current record without calling the API
-	// if pt.PayoutTransactionStatus != "PENDING" {
-	// 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{
-	// 		"message":            "payout already finalized",
-	// 		"payout_transaction": pt,
-	// 	})
-	// 	return
-	// }
-
-	res, err := generateToken()
-	if err != nil {
-		utils.BadRequest(w, ph.logger, "create payout transaction", err)
+	// Only PENDING payouts are re-checked. Re-finalizing a FAILED/REFUND row
+	// from a later provider reply could reopen it for a second refund.
+	if pt.PayoutTransactionStatus != "PENDING" {
+		utils.WriteJSON(w, http.StatusOK, utils.Envelope{
+			"message":            "payout already finalized",
+			"payout_transaction": pt,
+		})
 		return
 	}
 
-	apiResp, finalStatus, orderID, operatorTxnID := callDevsidhPayoutStatusAPI(ph.logger, pt.PartnerRequestID, pt.OrderID, res.Token)
+	apiResp, finalStatus, orderID, operatorTxnID := callFinzengPayoutStatusAPI(ph.logger, pt)
 
 	if err = ph.payoutStore.FinalizePayout(pt.PayoutTransactionID, orderID, operatorTxnID, finalStatus); err != nil {
 		utils.ServerError(w, ph.logger, "check payout status finalize", err)

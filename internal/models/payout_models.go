@@ -1,7 +1,9 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -76,6 +78,52 @@ type DevsidhPayoutAPIResponseModel struct {
 		ClientTransactionID          string  `json:"clientTxnId"`
 		TransactionID                string  `json:"transactionId"`
 		TransactionStatusID          int     `json:"txnStatusID"`
+	} `json:"data"`
+}
+
+// FlexString accepts a JSON string or number. FinZenG sends some fields
+// (sanTxnId, cTxnId, newBalance) either quoted or unquoted.
+type FlexString string
+
+func (f *FlexString) UnmarshalJSON(b []byte) error {
+	str := strings.TrimSpace(string(b))
+	if str == "null" {
+		*f = ""
+		return nil
+	}
+	if strings.HasPrefix(str, `"`) {
+		var v string
+		if err := json.Unmarshal(b, &v); err != nil {
+			return err
+		}
+		*f = FlexString(strings.TrimSpace(v))
+		return nil
+	}
+	*f = FlexString(str)
+	return nil
+}
+
+type FinzengPayoutAPIResponseModel struct {
+	SanTxnID            FlexString          `json:"sanTxnId"`
+	Status              string              `json:"status"`
+	ResponseCode        string              `json:"responseCode"`
+	Message             string              `json:"message"`
+	NewBalance          FlexString          `json:"newBalance,omitempty"`
+	BankReferenceNumber string              `json:"bankReferenceNumber,omitempty"`
+	CTxnID              FlexString          `json:"cTxnId"`
+	Errors              map[string][]string `json:"errors,omitempty"`
+}
+
+type FinzengBalanceAPIResponseModel struct {
+	SanTxnID     FlexString `json:"sanTxnId"`
+	Status       string     `json:"status"`
+	ResponseCode string     `json:"responseCode"`
+	Message      string     `json:"message"`
+	Data         struct {
+		AvailableBalance float64 `json:"availableBalance"`
+		BlockedBalance   float64 `json:"blockedBalance"`
+		CreditedBalance  float64 `json:"creditedBalance"`
+		DebitedBalance   float64 `json:"debitedBalance"`
 	} `json:"data"`
 }
 
