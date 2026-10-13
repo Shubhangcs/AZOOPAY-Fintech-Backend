@@ -80,6 +80,7 @@ func callFinzengPayoutAPI(logger *slog.Logger, pt *models.PayoutTransactionModel
 		"transfer_type":      strings.ToUpper(strings.TrimSpace(pt.TransferType)),
 		"sender_mobile":      strings.TrimSpace(pt.RetailerPhone),
 		"transfer_amount":    fmt.Sprintf("%.2f", pt.Amount),
+		"bank_id":            "3",
 		"beneficiary_name":   finzengClean(pt.BeneficiaryName),
 		"beneficiary_mobile": strings.TrimSpace(pt.MobileNumber),
 		"ifsc":               strings.ToUpper(strings.TrimSpace(pt.IFSCCode)),
