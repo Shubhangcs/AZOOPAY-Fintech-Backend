@@ -27,14 +27,16 @@ type UPIATMStore interface {
 var ErrUPIATMDebitFailed = errors.New("upi atm payment received but wallet debit failed")
 
 type PostgresUPIATMStore struct {
-	db          *sql.DB
-	walletStore WalletTransactionStore
+	db             *sql.DB
+	walletStore    WalletTransactionStore
+	commisionStore CommisionStore
 }
 
-func NewPostgresUPIATMStore(db *sql.DB, walletStore WalletTransactionStore) *PostgresUPIATMStore {
+func NewPostgresUPIATMStore(db *sql.DB, walletStore WalletTransactionStore, commisionStore CommisionStore) *PostgresUPIATMStore {
 	return &PostgresUPIATMStore{
 		db,
 		walletStore,
+		commisionStore,
 	}
 }
 
@@ -204,6 +206,47 @@ func NormalizeUPIATMSettlementStatus(status string) (string, bool) {
 
 // FinilizeQRStatus records the latest provider status. The retailer wallet is
 // debited with the QR amount exactly once, on the first transition into SUCCESS.
+// creditUPIATMCommision credits the slab commission to the retailer,
+// distributor and master distributor in full (no TDS), the same way payout
+// commissions are credited. Runs inside the SUCCESS transaction, so it happens
+// exactly once per QR.
+func (us *PostgresUPIATMStore) creditUPIATMCommision(tx *sql.Tx, retailerId, requestId string, amount float64) error {
+	commision := us.commisionStore.GetUPIATMCommision(amount)
+	if commision == nil || commision.TotalCommision <= 0 {
+		return nil
+	}
+
+	rc, err := getRetailerDetails(us.db, retailerId)
+	if err != nil {
+		return err
+	}
+
+	remarks := fmt.Sprintf("UPI ATM commission | Amount: %.2f | Ref: %s", amount, requestId)
+
+	credit := func(userID string, value float64) error {
+		if value <= 0 {
+			return nil
+		}
+		info, err := getUserTableInfo(userID)
+		if err != nil {
+			return err
+		}
+		return creditTx(tx, transaction{
+			UserID: userID, ReferenceID: requestId,
+			Amount: value, Reason: "UPI_ATM_COMMISSION", Remarks: remarks,
+			userTableInfo: *info,
+		}, us.walletStore)
+	}
+
+	if err := credit(retailerId, commision.RetailerCommision); err != nil {
+		return err
+	}
+	if err := credit(rc.distributorID, commision.DistributorCommision); err != nil {
+		return err
+	}
+	return credit(rc.mdID, commision.MasterDistributorCommision)
+}
+
 func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransactionStatusAPIResponseModel) error {
 	tx, err := us.db.Begin()
 	if err != nil {
@@ -263,6 +306,10 @@ func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransac
 			if errors.Is(err, sql.ErrNoRows) {
 				return fmt.Errorf("%w: %w", ErrUPIATMDebitFailed, checkExistsTx(tx, rtTableInfo.TableName, rtTableInfo.IDColumnName, retailerId, "retailer"))
 			}
+			return err
+		}
+
+		if err := us.creditUPIATMCommision(tx, retailerId, req.RequestID, amount); err != nil {
 			return err
 		}
 	}

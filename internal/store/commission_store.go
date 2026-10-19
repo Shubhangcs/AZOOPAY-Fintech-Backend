@@ -23,6 +23,7 @@ type CommisionStore interface {
 	GetCommisionByUserIDServiceAndAmount(userID, service string, amount float64) (*models.CommisionModel, error)
 	GetDefaultCommision(amount float64) *models.CommisionModel
 	GetAEPSCommision(amount float64) *models.CommisionModel
+	GetUPIATMCommision(amount float64) *models.CommisionModel
 }
 
 // Create Commision
@@ -190,63 +191,49 @@ func (cs *PostgresCommisionStore) GetDefaultCommision(amount float64) *models.Co
 	}
 }
 
+func slabCommision(retailer, distributor, md float64) *models.CommisionModel {
+	return &models.CommisionModel{
+		TotalCommision:             retailer + distributor + md,
+		AdminCommision:             0,
+		MasterDistributorCommision: md,
+		DistributorCommision:       distributor,
+		RetailerCommision:          retailer,
+	}
+}
+
+// GetAEPSCommision returns the AEPS cash withdrawal commission slab
+// (RT / DI / MD). Amounts outside 100 - 10000 return nil (invalid amount).
 func (cs *PostgresCommisionStore) GetAEPSCommision(amount float64) *models.CommisionModel {
-	if amount >= 100 && amount < 500 {
-		return &models.CommisionModel{
-			TotalCommision:             0,
-			AdminCommision:             0,
-			MasterDistributorCommision: 0,
-			DistributorCommision:       0,
-			RetailerCommision:          0,
-		}
-	} else if amount >= 500 && amount < 1000 {
-		return &models.CommisionModel{
-			TotalCommision:             0,
-			AdminCommision:             0,
-			MasterDistributorCommision: 0,
-			DistributorCommision:       0,
-			RetailerCommision:          2,
-		}
-	} else if amount >= 1000 && amount < 2000 {
-		return &models.CommisionModel{
-			TotalCommision:             0,
-			AdminCommision:             0,
-			MasterDistributorCommision: 0,
-			DistributorCommision:       0.5,
-			RetailerCommision:          3,
-		}
-	} else if amount >= 2000 && amount < 3000 {
-		return &models.CommisionModel{
-			TotalCommision:             0,
-			AdminCommision:             0,
-			MasterDistributorCommision: 0,
-			DistributorCommision:       0.5,
-			RetailerCommision:          4,
-		}
-	} else if amount >= 3000 && amount < 5000 {
-		return &models.CommisionModel{
-			TotalCommision:             0,
-			AdminCommision:             0,
-			MasterDistributorCommision: 0,
-			DistributorCommision:       0.5,
-			RetailerCommision:          7,
-		}
-	} else if amount >= 5000 && amount < 7000 {
-		return &models.CommisionModel{
-			TotalCommision:             0,
-			AdminCommision:             0,
-			MasterDistributorCommision: 0,
-			DistributorCommision:       0.75,
-			RetailerCommision:          8,
-		}
-	} else if amount >= 7000 && amount <= 10000 {
-		return &models.CommisionModel{
-			TotalCommision:             0,
-			AdminCommision:             0,
-			MasterDistributorCommision: 0,
-			DistributorCommision:       1,
-			RetailerCommision:          10,
-		}
+	switch {
+	case amount >= 100 && amount < 500:
+		return slabCommision(0, 0, 0)
+	case amount >= 500 && amount < 1000:
+		return slabCommision(1, 0, 0)
+	case amount >= 1000 && amount < 2000:
+		return slabCommision(4, 0.25, 0)
+	case amount >= 2000 && amount < 3000:
+		return slabCommision(6, 0.5, 0)
+	case amount >= 3000 && amount < 8000:
+		return slabCommision(12, 0.5, 0.5)
+	case amount >= 8000 && amount <= 10000:
+		return slabCommision(14, 1, 0)
 	}
 	return nil
+}
+
+// GetUPIATMCommision returns the UPI ATM commission slab (RT / DI / MD).
+// Amounts of 3000 and above use the top slab; below 500 earns nothing.
+func (cs *PostgresCommisionStore) GetUPIATMCommision(amount float64) *models.CommisionModel {
+	switch {
+	case amount < 500:
+		return slabCommision(0, 0, 0)
+	case amount < 1000:
+		return slabCommision(1, 0, 0)
+	case amount < 2000:
+		return slabCommision(2, 0, 0)
+	case amount < 3000:
+		return slabCommision(4, 0.5, 0)
+	default:
+		return slabCommision(9, 1, 0)
+	}
 }

@@ -2,3 +2,6 @@
 .claude
 fintech.postman_collection.json
 *.pdf
+*.jpeg
+*.jpg
+*.png
