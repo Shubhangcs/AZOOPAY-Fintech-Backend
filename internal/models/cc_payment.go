@@ -45,6 +45,7 @@ type CreateCreditCardPaymentTransactionRequestModel struct {
 	Amount           float64 `json:"amount"`
 	Mpin             int     `json:"mpin"`
 	PartnerRequestID string  `json:"partner_request_id"`
+	Charge           float64 `json:"charge"`
 }
 
 type UpdateCreditCardPaymentTransactionRequestModel struct {
@@ -90,6 +91,7 @@ type CreditCardPaymentTransactionModel struct {
 	OperatorName          string    `json:"operator_name"`
 	OperatorCode          string    `json:"operator_code"`
 	Amount                float64   `json:"amount"`
+	Charge                float64   `json:"charge"`
 	Status                string    `json:"status"`
 	PartnerRequestID      string    `json:"partner_request_id"`
 	OrderID               string    `json:"order_id"`

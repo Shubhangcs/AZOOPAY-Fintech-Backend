@@ -157,7 +157,7 @@ func (ch *CCHandler) HandleCreditCardPayment(w http.ResponseWriter, r *http.Requ
 		utils.ServerError(w, ch.logger, "credit card payment", err)
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc bill payment successfull", "response": res})
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"message": "cc bill payment successfull", "response": res, "charge": req.Charge})
 }
 
 func creditCardPayment(req *models.CreateCreditCardPaymentTransactionRequestModel) (*models.CreditCardBillPaymentAPIResponse, error) {
@@ -217,7 +217,8 @@ func isCCClientErr(err error) bool {
 		msg == "cc transaction not found" ||
 		msg == "cc transaction not found or already refunded" ||
 		msg == "only FAILED cc transactions can be refunded" ||
-		msg == "invalid mpin"
+		msg == "invalid mpin" ||
+		msg == "amount must be between 100 and 100000"
 }
 
 func (ch *CCHandler) HandleGetCreditCardPaymentTransactionByID(w http.ResponseWriter, r *http.Request) {

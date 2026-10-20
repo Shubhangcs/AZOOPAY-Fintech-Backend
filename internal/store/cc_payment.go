@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/levionstudio/fintech/internal/models"
 	"github.com/levionstudio/fintech/internal/utils"
@@ -224,7 +225,28 @@ func (cc *PostgresCreditCardPaymentStore) GetBeneficiaryByBeneficiaryID(benefici
 	return &bene, nil
 }
 
+// ccBillCharge is the CC bill payment charge, debited from the retailer on top
+// of the bill amount and credited to the admin wallet only (no RT/DI/MD share):
+//   - 100 to 10000      : flat Rs 25
+//   - 10001 to 100000   : 0.20% of the amount
+func ccBillCharge(amount float64) (float64, error) {
+	switch {
+	case amount >= 100 && amount <= 10000:
+		return 25, nil
+	case amount > 10000 && amount <= 100000:
+		return math.Round(amount*0.002*100) / 100, nil
+	default:
+		return 0, errors.New("amount must be between 100 and 100000")
+	}
+}
+
 func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransaction(data *models.CreateCreditCardPaymentTransactionRequestModel) (int64, error) {
+	charge, err := ccBillCharge(data.Amount)
+	if err != nil {
+		return 0, err
+	}
+	data.Charge = charge
+
 	if err := verifyMpin(cc.db, data.BeneDetails.RetailerID, data.Mpin); err != nil {
 		return 0, err
 	}
@@ -239,7 +261,7 @@ func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransa
 	if rc.blocked {
 		return 0, errors.New("retailer is blocked")
 	}
-	if rc.balance < data.Amount {
+	if rc.balance < data.Amount+charge {
 		return 0, errors.New("insufficient wallet balance")
 	}
 
@@ -289,6 +311,39 @@ func (cc *PostgresCreditCardPaymentStore) InitilizeCreateCreditCardPaymentTransa
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, checkExistsTx(tx, userTableInfo.TableName, userTableInfo.IDColumnName, data.BeneDetails.RetailerID, "retailer")
 		}
+		return 0, err
+	}
+
+	// Charge: debit the retailer, credit the admin wallet only.
+	refID := fmt.Sprintf("%d", ccTransactionId)
+	chargeRemarks := fmt.Sprintf("Credit Card Bill Payment charge | Amount: %.2f | Ref: %s", data.Amount, refID)
+
+	if err := debitTx(tx, transaction{
+		UserID:        data.BeneDetails.RetailerID,
+		ReferenceID:   refID,
+		Amount:        charge,
+		Reason:        "CC_BILL_PAYMENT_CHARGE",
+		Remarks:       chargeRemarks,
+		userTableInfo: *userTableInfo,
+	}, cc.wts); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, checkExistsTx(tx, userTableInfo.TableName, userTableInfo.IDColumnName, data.BeneDetails.RetailerID, "retailer")
+		}
+		return 0, err
+	}
+
+	adminInfo, err := getUserTableInfo(rc.adminID)
+	if err != nil {
+		return 0, err
+	}
+	if err := creditTx(tx, transaction{
+		UserID:        rc.adminID,
+		ReferenceID:   refID,
+		Amount:        charge,
+		Reason:        "CC_BILL_PAYMENT_CHARGE",
+		Remarks:       chargeRemarks + " | Retailer: " + data.BeneDetails.RetailerID,
+		userTableInfo: *adminInfo,
+	}, cc.wts); err != nil {
 		return 0, err
 	}
 
@@ -370,6 +425,13 @@ SELECT
 	b.operator_name,
 	b.operator_code,
 	t.amount,
+	COALESCE((
+		SELECT wc.credit_amount FROM wallet_transactions wc
+		WHERE wc.reference_id = t.transaction_id::TEXT
+		  AND wc.transaction_reason = 'CC_BILL_PAYMENT_CHARGE'
+		  AND wc.credit_amount IS NOT NULL
+		LIMIT 1
+	), 0) AS charge,
 	t.status,
 	t.partner_request_id,
 	t.order_id,
@@ -461,6 +523,7 @@ func scanCreditCardPaymentTransactions(db *sql.DB, q string, args ...any) ([]mod
 			&t.OperatorName,
 			&t.OperatorCode,
 			&t.Amount,
+			&t.Charge,
 			&t.Status,
 			&t.PartnerRequestID,
 			&t.OrderID,
@@ -515,6 +578,43 @@ func (cc *PostgresCreditCardPaymentStore) RefundCreditCardPaymentTransaction(tra
 	refID := fmt.Sprintf("%d", transactionID)
 	remarks := fmt.Sprintf("Credit Card Bill Payment refund | Ref: %s", refID)
 
+	// Reverse the charge credited to the admin at payment time (the actual
+	// credited value is read back, so later rate changes do not matter).
+	refundAmount := t.Amount
+	var adminID string
+	var charge float64
+	err = tx.QueryRow(`
+		SELECT user_id, credit_amount
+		FROM wallet_transactions
+		WHERE reference_id = $1
+		  AND transaction_reason = 'CC_BILL_PAYMENT_CHARGE'
+		  AND credit_amount IS NOT NULL
+		LIMIT 1;
+	`, refID).Scan(&adminID, &charge)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+	if err == nil && charge > 0 {
+		adminInfo, err := getUserTableInfo(adminID)
+		if err != nil {
+			return err
+		}
+		if err := debitTx(tx, transaction{
+			UserID:        adminID,
+			ReferenceID:   refID,
+			Amount:        charge,
+			Reason:        "CC_BILL_PAYMENT_REFUND",
+			Remarks:       "Credit Card Bill Payment charge reversal | Ref: " + refID,
+			userTableInfo: *adminInfo,
+		}, cc.wts); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return checkExistsTx(tx, adminInfo.TableName, adminInfo.IDColumnName, adminID, "admin")
+			}
+			return err
+		}
+		refundAmount += charge
+	}
+
 	var refundAfterBalance float64
 	if err := tx.QueryRow(`
 		UPDATE retailers
@@ -522,15 +622,15 @@ func (cc *PostgresCreditCardPaymentStore) RefundCreditCardPaymentTransaction(tra
 			updated_at = NOW()
 		WHERE retailer_id = $2
 		RETURNING refund_wallet;
-	`, t.Amount, t.RetailerID).Scan(&refundAfterBalance); err != nil {
+	`, refundAmount, t.RetailerID).Scan(&refundAfterBalance); err != nil {
 		return err
 	}
 
 	if err := cc.wts.CreateWalletTransactionTx(tx, &models.WalletTransactionModel{
 		UserID:            t.RetailerID,
 		ReferenceID:       refID,
-		CreditAmount:      &t.Amount,
-		BeforeBalance:     refundAfterBalance - t.Amount,
+		CreditAmount:      &refundAmount,
+		BeforeBalance:     refundAfterBalance - refundAmount,
 		AfterBalance:      refundAfterBalance,
 		TransactionReason: "CC_BILL_PAYMENT_REFUND",
 		Remarks:           remarks,
