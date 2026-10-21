@@ -75,8 +75,8 @@ func (ua *UPIATMHandler) HandleCreateUPIQR(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// The amount is debited from the wallet when the payment succeeds.
-	if err := ua.upiAtmStore.ValidateRetailerForQR(retailerId, req.Amount); err != nil {
+	// The amount is credited to the wallet when the payment succeeds.
+	if err := ua.upiAtmStore.ValidateRetailerForQR(retailerId); err != nil {
 		utils.BadRequest(w, ua.logger, "create upi qr", err)
 		return
 	}
@@ -169,10 +169,6 @@ func (ua *UPIATMHandler) HandleCheckQRTransactionStatus(w http.ResponseWriter, r
 	apiRes.RequestID = apiReq.RequestID
 
 	if err := ua.upiAtmStore.FinilizeQRStatus(apiRes); err != nil {
-		if errors.Is(err, store.ErrUPIATMDebitFailed) {
-			utils.BadRequest(w, ua.logger, "check upi qr status", err)
-			return
-		}
 		utils.ServerError(w, ua.logger, "check upi qr status", err)
 		return
 	}

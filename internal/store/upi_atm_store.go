@@ -12,7 +12,7 @@ import (
 
 type UPIATMStore interface {
 	GetUPIATMDetailsByRetailerID(retailerId string) (*models.UPIATMDetailsModel, error)
-	ValidateRetailerForQR(retailerId string, amount float64) error
+	ValidateRetailerForQR(retailerId string) error
 	CreateQR(retailerId string, req *models.UPIATMCreateQRAPIResponseModel) error
 	GetQRDetailsForStatusCheck(requestId string) (*models.UPIATMCheckQRTransactionStatusAPIRequestModel, error)
 	FinilizeQRStatus(req *models.UPIATMCheckQRTransactionStatusAPIResponseModel) error
@@ -20,11 +20,6 @@ type UPIATMStore interface {
 	GetUPIATMTransactionsByRetailerID(retailerId string, p utils.QueryParams) ([]models.UPIATMTransactionResponseModel, error)
 	GetALLUPIATMTransactions(p utils.QueryParams) ([]models.UPIATMTransactionResponseModel, error)
 }
-
-// ErrUPIATMDebitFailed wraps the checkExistsTx reason ("insufficient balance" /
-// "retailer not found") when a QR payment succeeded but debitTx could not debit
-// the retailer. The QR is left non-final so the status poller retries the debit.
-var ErrUPIATMDebitFailed = errors.New("upi atm payment received but wallet debit failed")
 
 type PostgresUPIATMStore struct {
 	db             *sql.DB
@@ -67,10 +62,10 @@ func (us *PostgresUPIATMStore) GetUPIATMDetailsByRetailerID(retailerId string) (
 	return &res, nil
 }
 
-// ValidateRetailerForQR applies the same pre-checks the other wallet services
-// run before debiting (KYC, blocked, retailer_wallet_balance), since the QR
-// amount is debited from the wallet once the payment succeeds.
-func (us *PostgresUPIATMStore) ValidateRetailerForQR(retailerId string, amount float64) error {
+// ValidateRetailerForQR checks the retailer can transact (KYC verified, not
+// blocked). No balance check: the QR amount is credited to the retailer's
+// wallet once the payment succeeds.
+func (us *PostgresUPIATMStore) ValidateRetailerForQR(retailerId string) error {
 	rc, err := getRetailerDetails(us.db, retailerId)
 	if err != nil {
 		return err
@@ -80,9 +75,6 @@ func (us *PostgresUPIATMStore) ValidateRetailerForQR(retailerId string, amount f
 	}
 	if rc.blocked {
 		return errors.New("retailer is blocked")
-	}
-	if rc.balance < amount {
-		return errors.New("insufficient wallet balance")
 	}
 	return nil
 }
@@ -291,21 +283,20 @@ func (us *PostgresUPIATMStore) FinilizeQRStatus(req *models.UPIATMCheckQRTransac
 			return err
 		}
 
-		if err := debitTx(
+		// The customer paid via UPI and the retailer handed over cash, so the
+		// QR amount is credited to the retailer's wallet.
+		if err := creditTx(
 			tx,
 			transaction{
 				UserID:        retailerId,
 				ReferenceID:   req.RequestID,
 				Amount:        amount,
 				Reason:        "UPI_ATM",
-				Remarks:       "UPI ATM Amount Debit From: " + retailerId,
+				Remarks:       "UPI ATM Amount Credit To: " + retailerId,
 				userTableInfo: *rtTableInfo,
 			},
 			us.walletStore,
 		); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return fmt.Errorf("%w: %w", ErrUPIATMDebitFailed, checkExistsTx(tx, rtTableInfo.TableName, rtTableInfo.IDColumnName, retailerId, "retailer"))
-			}
 			return err
 		}
 
