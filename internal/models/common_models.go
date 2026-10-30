@@ -38,10 +38,10 @@ type PayoutData struct {
 }
 
 type RechargeKitWalletBalanceResponseModel struct {
-	Error    int     `json:"error"`
+	Error    int     `json:"err"`
 	Message  string  `json:"msg"`
 	Balance  float64 `json:"wallet_amount"`
-	Balance2 float32 `json:"payout_wallet_amount"`
+	Balance2 float32 `json:"dmr_wallet_amount"`
 }
 
 type PayntricWalletBalanceResponseModel struct {
