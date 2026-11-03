@@ -206,6 +206,8 @@ func GetRequest(url, authKey, authValue string, res any) error {
 	}
 	defer resp.Body.Close()
 
+	fmt.Println(resp.Body)
+
 	if err := json.NewDecoder(resp.Body).Decode(res); err != nil {
 		return fmt.Errorf("GetRequest decode (status %d): %w", resp.StatusCode, err)
 	}
